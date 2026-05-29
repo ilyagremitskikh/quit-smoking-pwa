@@ -42,14 +42,14 @@ export function ProgressPage() {
 
   return (
     <div className="space-y-4">
-      <section className="grid grid-cols-2 gap-3">
+      <section className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
         <Stat label="Адхеренс" value={`${adherence}%`} />
         <Stat label="После отказа" value={`${progress.benefits.smokeFreeDays} д.`} />
         <Stat label="Не выкурено" value={String(progress.benefits.cigarettesAvoided)} />
         <Stat label="Сэкономлено" value={progress.benefits.moneySaved === null ? "—" : `${progress.benefits.moneySaved} ₽`} />
       </section>
 
-      <section className="rounded-md border border-line bg-panel p-4 shadow-sm">
+      <section className="surface-in rounded-md border border-line bg-panel p-4 shadow-sm">
         <h2 className="mb-3 font-semibold">Календарь курса</h2>
         <div className="grid grid-cols-5 gap-2">
           {progress.days.map((day) => {
@@ -58,7 +58,7 @@ export function ProgressPage() {
               <div
                 key={day.dayNumber}
                 className={[
-                  "relative grid aspect-square place-items-center rounded-md border text-sm font-medium",
+                  "tap-button relative grid aspect-square place-items-center rounded-md border text-sm font-medium",
                   day.complete
                     ? "border-mint/40 bg-mint/10 text-emerald-700"
                     : day.partial
@@ -96,19 +96,19 @@ export function ProgressPage() {
         </div>
       </section>
 
-      <section className="rounded-md border border-line bg-panel p-4 shadow-sm">
+      <section className="surface-in rounded-md border border-line bg-panel p-4 shadow-sm">
         <h2 className="mb-3 font-semibold">Курение в журнале</h2>
         {progress.smokeEvents.length === 0 ? (
           <p className="text-sm text-slate-500">Пока нет записей.</p>
         ) : (
           <div className="space-y-2">
             {progress.smokeEvents.slice(0, 8).map((smoke) => (
-              <div key={smoke.id} className="flex items-center justify-between rounded-md bg-paper px-3 py-2">
-                <div>
+              <div key={smoke.id} className="tap-button flex min-w-0 items-center justify-between gap-3 rounded-md bg-paper px-3 py-2">
+                <div className="min-w-0">
                   <p className="font-medium">
                     {smoke.dayNumber ? `День ${smoke.dayNumber}` : "Вне курса"} · {formatTime(smoke.logged_at)}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="min-w-0 break-words text-xs text-slate-500">
                     {smoke.kind === "transition" ? "переходный период" : "срыв после дня 5"}
                   </p>
                 </div>
@@ -128,7 +128,7 @@ export function ProgressPage() {
         )}
       </section>
 
-      <section className="rounded-md border border-line bg-panel p-4 shadow-sm">
+      <section className="surface-in rounded-md border border-line bg-panel p-4 shadow-sm">
         <h2 className="mb-3 font-semibold">Таблетки по дням</h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -153,9 +153,9 @@ export function ProgressPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-line bg-panel p-4 shadow-sm">
+    <div className="surface-in min-w-0 rounded-md border border-line bg-panel p-4 shadow-sm">
       <p className="text-sm text-slate-600">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
+      <p className="mt-1 min-w-0 break-words text-2xl font-semibold">{value}</p>
     </div>
   );
 }

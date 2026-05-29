@@ -90,8 +90,7 @@ export class Repository {
       ? this.getScheduleRows(course.id, scheduleDay)
       : [];
     const todaySchedule = this.getDoseViews(todayRows, now);
-    const nextDose =
-      todaySchedule.find((dose) => dose.status === "pending" || (dose.status === "late" && !dose.takenAt)) ?? null;
+    const nextDose = todaySchedule.find((dose) => !dose.takenAt) ?? null;
 
     return {
       setupNeeded: false,
@@ -142,7 +141,9 @@ export class Repository {
       throw new Error("Dose schedule item not found");
     }
 
-    const status = statusForTaking(row.planned_time, now);
+    const dayRows = this.getScheduleRows(row.course_id, row.day_number);
+    const currentView = this.getDoseViews(dayRows, now).find((dose) => dose.id === scheduleId);
+    const status = statusForTaking(currentView?.effectiveTime ?? row.planned_time, now);
     const takenAt = isoFromDate(now);
     this.db
       .prepare(`
@@ -154,7 +155,7 @@ export class Repository {
       `)
       .run(scheduleId, takenAt, status);
 
-    return this.getDoseViews([row], now)[0]!;
+    return this.getDoseViews(dayRows, now).find((dose) => dose.id === scheduleId)!;
   }
 
   deleteDose(scheduleId: number): void {

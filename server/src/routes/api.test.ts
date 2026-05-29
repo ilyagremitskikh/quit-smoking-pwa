@@ -108,4 +108,35 @@ describe("api routes", () => {
     expect(config.json().available).toBe(true);
     expect(config.json().remindersEnabled).toBe(true);
   });
+
+  it("returns shifted effective time after a late dose", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/api/course",
+      payload: {
+        startDate: "2026-05-29T03:00:00.000Z",
+        firstDoseTime: "08:00"
+      }
+    });
+    const state = await app.inject({
+      method: "GET",
+      url: "/api/state",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T03:05:00.000Z" }
+    });
+    const firstDoseId = state.json().todaySchedule[0].id;
+
+    await app.inject({
+      method: "POST",
+      url: `/api/doses/${firstDoseId}/take`,
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T03:20:00.000Z" }
+    });
+    const shifted = await app.inject({
+      method: "GET",
+      url: "/api/state",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T03:21:00.000Z" }
+    });
+
+    expect(shifted.json().nextDose.effectiveTime).toBe("2026-05-29T05:20:00.000Z");
+    expect(shifted.json().nextDose.shifted).toBe(true);
+  });
 });

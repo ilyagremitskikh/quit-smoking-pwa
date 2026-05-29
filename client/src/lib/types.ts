@@ -13,10 +13,12 @@ export interface DoseView {
   dayNumber: number;
   phase: number;
   plannedTime: string;
+  effectiveTime: string;
   intervalMinutes: number;
   flexible: boolean;
   status: DoseStatus;
   takenAt: string | null;
+  shifted: boolean;
 }
 
 export interface Quote {

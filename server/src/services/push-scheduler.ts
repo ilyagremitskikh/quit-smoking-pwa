@@ -1,13 +1,15 @@
 import cron from "node-cron";
 import type Database from "better-sqlite3";
 import { Repository } from "../db/repository.js";
-import { addMinutesIso, isoFromDate } from "./time.js";
+import { addMinutesIso } from "./time.js";
+import { computeEffectiveTimes } from "./dose-status.js";
 import { errorMessage, isGonePushError, PushSender } from "./push-service.js";
-import type { DoseScheduleRow, PushDeliveryKind, PushSubscriptionRow } from "../types/domain.js";
+import type { DoseLogRow, DoseScheduleRow, PushDeliveryKind, PushSubscriptionRow } from "../types/domain.js";
 
 interface DueReminder {
   subscription: PushSubscriptionRow;
   dose: DoseScheduleRow;
+  effectiveTime: string;
   kind: Exclude<PushDeliveryKind, "test">;
 }
 
@@ -36,7 +38,7 @@ export async function runPushReminderTick(repo: Repository, sender: PushSender, 
     try {
       await sender.send(reminder.subscription, {
         title: reminder.kind === "initial" ? "Пора принять таблетку" : "Напоминание",
-        body: reminder.kind === "initial" ? `Слот на ${formatTime(reminder.dose.planned_time)}` : "Таблетка ещё не отмечена",
+        body: reminder.kind === "initial" ? `Слот на ${formatTime(reminder.effectiveTime)}` : "Таблетка ещё не отмечена",
         url: "/",
         badgeCount: 1
       });
@@ -86,20 +88,36 @@ export function findDueReminders(db: Database.Database, now = new Date()): DueRe
     return [];
   }
 
-  const doses = db
+  const rows = db
     .prepare(
       `
-      SELECT ds.*
-      FROM dose_schedule ds
-      LEFT JOIN dose_log dl ON dl.schedule_id = ds.id
-      WHERE ds.course_id = ?
-        AND ds.day_number BETWEEN 1 AND 25
-        AND ds.planned_time <= ?
-        AND dl.id IS NULL
-      ORDER BY ds.planned_time
+      SELECT *
+      FROM dose_schedule
+      WHERE course_id = ?
+        AND day_number BETWEEN 1 AND 25
+      ORDER BY planned_time
     `
     )
-    .all(course.id, isoFromDate(now)) as DoseScheduleRow[];
+    .all(course.id) as DoseScheduleRow[];
+
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const logs = db
+    .prepare(`
+      SELECT dl.*
+      FROM dose_log dl
+      JOIN dose_schedule ds ON ds.id = dl.schedule_id
+      WHERE ds.course_id = ?
+    `)
+    .all(course.id) as DoseLogRow[];
+  const logBySchedule = new Map(logs.map((log) => [log.schedule_id, log]));
+  const effectiveTimeBySchedule = computeEffectiveTimes(rows, logBySchedule);
+  const doses = rows.filter((dose) => {
+    const effectiveTime = effectiveTimeBySchedule.get(dose.id) ?? dose.planned_time;
+    return dose.day_number === courseAgeDays && !logBySchedule.has(dose.id) && new Date(effectiveTime).getTime() <= now.getTime();
+  });
 
   if (doses.length === 0) {
     return [];
@@ -124,12 +142,13 @@ export function findDueReminders(db: Database.Database, now = new Date()): DueRe
   `);
 
   for (const dose of doses) {
-    const kinds = dueKindsForDose(dose, now);
+    const effectiveTime = effectiveTimeBySchedule.get(dose.id) ?? dose.planned_time;
+    const kinds = dueKindsForDose(effectiveTime, now);
     for (const subscription of subscriptions) {
       for (const kind of kinds) {
         const existing = hasDelivery.get(dose.id, subscription.id, kind);
         if (!existing) {
-          due.push({ dose, subscription, kind });
+          due.push({ dose, effectiveTime, subscription, kind });
         }
       }
     }
@@ -138,9 +157,9 @@ export function findDueReminders(db: Database.Database, now = new Date()): DueRe
   return due;
 }
 
-function dueKindsForDose(dose: DoseScheduleRow, now: Date): Array<Exclude<PushDeliveryKind, "test">> {
-  const planned = new Date(dose.planned_time);
-  const retryAt = new Date(addMinutesIso(dose.planned_time, 15));
+function dueKindsForDose(effectiveTime: string, now: Date): Array<Exclude<PushDeliveryKind, "test">> {
+  const planned = new Date(effectiveTime);
+  const retryAt = new Date(addMinutesIso(effectiveTime, 15));
   const kinds: Array<Exclude<PushDeliveryKind, "test">> = [];
   if (planned.getTime() <= now.getTime()) {
     kinds.push("initial");

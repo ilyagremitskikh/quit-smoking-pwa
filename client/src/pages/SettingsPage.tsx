@@ -125,7 +125,7 @@ export function SettingsPage() {
   }
 
   const demoPanel = (
-    <section className="space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
+    <section className="surface-in space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
       <div>
         <div className="mb-1 flex items-center gap-2">
           <FlaskConical className="text-amber" size={20} />
@@ -136,15 +136,15 @@ export function SettingsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
         {demoScenarios.map((scenario) => (
           <button
             key={scenario.id}
             onClick={() => void handleDemoScenario(scenario.id)}
-            className="min-h-20 rounded-md border border-line bg-paper p-3 text-left hover:border-amber/60"
+            className="tap-button min-h-20 min-w-0 rounded-md border border-line bg-paper p-3 text-left hover:border-amber/60"
           >
-            <span className="block font-medium text-ink">{scenario.label}</span>
-            <span className="mt-1 block text-xs leading-snug text-slate-600">{scenario.caption}</span>
+            <span className="block min-w-0 break-words font-medium text-ink">{scenario.label}</span>
+            <span className="mt-1 block min-w-0 break-words text-xs leading-snug text-slate-600">{scenario.caption}</span>
           </button>
         ))}
       </div>
@@ -152,7 +152,7 @@ export function SettingsPage() {
       {demoNowState ? (
         <button
           onClick={() => void handleDemoOff()}
-          className="min-h-11 w-full rounded-md border border-amber/40 bg-amber/10 px-4 text-sm font-semibold text-amber"
+          className="tap-button min-h-11 w-full min-w-0 rounded-md border border-amber/40 bg-amber/10 px-4 text-sm font-semibold text-amber"
         >
           Выключить виртуальное время
         </button>
@@ -161,7 +161,7 @@ export function SettingsPage() {
   );
 
   const pushPanel = (
-    <section className="space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
+    <section className="surface-in space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
       <div>
         <div className="mb-1 flex items-center gap-2">
           <Bell className="text-sky" size={20} />
@@ -172,7 +172,7 @@ export function SettingsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-sm">
+      <div className="grid grid-cols-1 gap-2 text-sm min-[380px]:grid-cols-2">
         <StatusPill label="Сервер" value={pushState?.serverAvailable ? "готов" : "нет VAPID"} ok={Boolean(pushState?.serverAvailable)} />
         <StatusPill label="Устройство" value={supportLabel(pushState)} ok={pushState?.support === "supported"} />
         <StatusPill label="Разрешение" value={permissionLabel(pushState)} ok={pushState?.permission === "granted"} />
@@ -183,16 +183,16 @@ export function SettingsPage() {
         <button
           onClick={() => void handleEnablePush()}
           disabled={!pushState?.serverAvailable}
-          className="flex min-h-12 items-center justify-center gap-2 rounded-md bg-sky px-4 font-semibold text-white disabled:bg-slate-200 disabled:text-slate-500"
+          className="tap-button flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-md bg-sky px-4 text-center font-semibold text-white disabled:bg-slate-200 disabled:text-slate-500"
         >
           <Bell size={18} />
-          Включить уведомления
+          <span className="min-w-0 break-words">Включить уведомления</span>
         </button>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
           <button
             onClick={() => void handleTestPush()}
             disabled={!pushState?.subscribed}
-            className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-sky/40 bg-sky/10 px-3 font-semibold text-sky disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
+            className="tap-button flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-sky/40 bg-sky/10 px-3 font-semibold text-sky disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
           >
             <Send size={16} />
             Тест
@@ -200,7 +200,7 @@ export function SettingsPage() {
           <button
             onClick={() => void handleDisablePush()}
             disabled={!pushState?.subscribed}
-            className="min-h-11 rounded-md border border-line px-3 font-semibold text-slate-600 disabled:text-slate-400"
+            className="tap-button min-h-11 min-w-0 rounded-md border border-line px-3 font-semibold text-slate-600 disabled:text-slate-400"
           >
             Отключить
           </button>
@@ -224,7 +224,7 @@ export function SettingsPage() {
     <div className="space-y-4">
       {message ? <p className="rounded-md border border-line bg-panel p-3 text-sm text-slate-600 shadow-sm">{message}</p> : null}
 
-      <form onSubmit={handleSettings} className="space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
+      <form onSubmit={handleSettings} className="surface-in space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
         <h2 className="text-lg font-semibold">Настройки</h2>
         <label className="block space-y-2">
           <span className="text-sm text-slate-700">Сигарет в день до курса</span>
@@ -252,7 +252,7 @@ export function SettingsPage() {
         </label>
         <button
           type="submit"
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-mint px-4 font-semibold text-white"
+          className="tap-button flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-md bg-mint px-4 font-semibold text-white"
         >
           <Save size={18} />
           Сохранить
@@ -263,7 +263,7 @@ export function SettingsPage() {
 
       {demoPanel}
 
-      <section className="space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
+      <section className="surface-in space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
         <h2 className="text-lg font-semibold">Перезапуск курса</h2>
         <label className="block space-y-2">
           <span className="text-sm text-slate-700">Первая таблетка дня</span>
@@ -277,7 +277,7 @@ export function SettingsPage() {
         <button
           onClick={handleRestart}
           className={[
-            "flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-4 font-semibold",
+            "tap-button flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-md px-4 font-semibold",
             armedRestart ? "bg-coral text-white" : "border border-coral/50 bg-coral/10 text-coral"
           ].join(" ")}
         >
@@ -291,9 +291,9 @@ export function SettingsPage() {
 
 function StatusPill({ label, value, ok }: { label: string; value: string; ok: boolean }) {
   return (
-    <div className={["rounded-md border px-3 py-2", ok ? "border-mint/30 bg-mint/10" : "border-line bg-paper"].join(" ")}>
+    <div className={["min-w-0 rounded-md border px-3 py-2", ok ? "border-mint/30 bg-mint/10" : "border-line bg-paper"].join(" ")}>
       <p className="text-xs text-slate-500">{label}</p>
-      <p className={["font-medium", ok ? "text-emerald-700" : "text-slate-700"].join(" ")}>{value}</p>
+      <p className={["min-w-0 break-words font-medium", ok ? "text-emerald-700" : "text-slate-700"].join(" ")}>{value}</p>
     </div>
   );
 }

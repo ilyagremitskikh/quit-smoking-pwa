@@ -6,46 +6,87 @@ export function computeDoseViews(
   now = new Date()
 ): DoseView[] {
   const logBySchedule = new Map(logs.map((log) => [log.schedule_id, log]));
+  const effectiveTimeBySchedule = computeEffectiveTimes(rows, logBySchedule);
 
   return rows.map((row, index) => {
     const log = logBySchedule.get(row.id);
+    const effectiveTime = effectiveTimeBySchedule.get(row.id) ?? row.planned_time;
     if (log) {
-      return toView(row, log.status, log.taken_at);
+      return toView(row, log.status, log.taken_at, effectiveTime);
     }
 
-    const planned = new Date(row.planned_time);
-    if (planned.getTime() > now.getTime()) {
-      return toView(row, "pending", null);
+    const effective = new Date(effectiveTime);
+    if (effective.getTime() > now.getTime()) {
+      return toView(row, "pending", null, effectiveTime);
     }
 
     const nextSameDay = rows.slice(index + 1).find((next) => next.day_number === row.day_number);
+    const nextEffectiveTime = nextSameDay ? effectiveTimeBySchedule.get(nextSameDay.id) ?? nextSameDay.planned_time : null;
     const isPastNextSlot = nextSameDay
-      ? new Date(nextSameDay.planned_time).getTime() <= now.getTime()
-      : isPastLocalEndOfDay(row.planned_time, now);
+      ? new Date(nextEffectiveTime!).getTime() <= now.getTime()
+      : isPastLocalEndOfDay(effectiveTime, now);
 
-    return toView(row, isPastNextSlot ? "skipped" : "late", null);
+    return toView(row, isPastNextSlot ? "skipped" : "late", null, effectiveTime);
   });
 }
 
-export function statusForTaking(plannedTime: string, now = new Date()): "taken" | "late" {
-  return now.getTime() > new Date(plannedTime).getTime() ? "late" : "taken";
+export function statusForTaking(effectiveTime: string, now = new Date()): "taken" | "late" {
+  return now.getTime() > new Date(effectiveTime).getTime() ? "late" : "taken";
 }
 
 function toView(
   row: DoseScheduleRow,
   status: DoseView["status"],
-  takenAt: string | null
+  takenAt: string | null,
+  effectiveTime: string
 ): DoseView {
   return {
     id: row.id,
     dayNumber: row.day_number,
     phase: row.phase,
     plannedTime: row.planned_time,
+    effectiveTime,
     intervalMinutes: row.interval_minutes,
     flexible: row.flexible === 1,
     status,
-    takenAt
+    takenAt,
+    shifted: effectiveTime !== row.planned_time
   };
+}
+
+export function computeEffectiveTimes(
+  rows: DoseScheduleRow[],
+  logBySchedule: Map<number, DoseLogRow>
+): Map<number, string> {
+  const effective = new Map<number, string>();
+  let previousDay: number | null = null;
+  let previousAnchorIso: string | null = null;
+
+  for (const row of rows) {
+    if (previousDay !== row.day_number) {
+      previousDay = row.day_number;
+      previousAnchorIso = null;
+    }
+
+    const shiftedByPrevious = previousAnchorIso
+      ? addMinutesIso(previousAnchorIso, row.interval_minutes)
+      : row.planned_time;
+    const effectiveTime = maxIso(row.planned_time, shiftedByPrevious);
+    effective.set(row.id, effectiveTime);
+
+    const log = logBySchedule.get(row.id);
+    previousAnchorIso = log?.taken_at ?? effectiveTime;
+  }
+
+  return effective;
+}
+
+function addMinutesIso(iso: string, minutes: number): string {
+  return new Date(new Date(iso).getTime() + minutes * 60_000).toISOString();
+}
+
+function maxIso(a: string, b: string): string {
+  return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
 }
 
 function isPastLocalEndOfDay(plannedTime: string, now: Date): boolean {

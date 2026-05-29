@@ -6,7 +6,7 @@ export function VideoPage() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-md border border-line bg-panel p-4 shadow-sm">
+      <section className="surface-in rounded-md border border-line bg-panel p-4 shadow-sm">
         <div className="mb-3 flex items-center gap-2">
           <PlayCircle className="text-mint" size={22} />
           <h2 className="text-lg font-semibold">Послание себе</h2>

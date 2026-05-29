@@ -30,7 +30,7 @@ export function App() {
   }, []);
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pt-5 text-ink">
+    <div className="app-shell mx-auto flex min-h-screen w-full max-w-md flex-col pt-5 text-ink">
       <header className="mb-5 flex items-center justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-mint">QuitKit</p>
@@ -39,14 +39,14 @@ export function App() {
       </header>
 
       {demoNow ? (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-sm text-amber">
-          <span>Демо-время: {new Date(demoNow).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
+        <div className="mb-4 flex min-w-0 items-center justify-between gap-3 rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-sm text-amber">
+          <span className="min-w-0 break-words">Демо-время: {new Date(demoNow).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
           <button
             onClick={() => {
               clearDemoNow();
               window.location.reload();
             }}
-            className="rounded-md border border-amber/40 px-2 py-1 text-xs"
+            className="tap-button shrink-0 rounded-md border border-amber/40 px-2 py-1 text-xs"
           >
             Выкл
           </button>
@@ -72,13 +72,13 @@ export function App() {
                 to={item.to}
                 className={({ isActive }) =>
                   [
-                    "flex min-h-14 flex-col items-center justify-center gap-1 rounded-md text-xs transition",
+                    "tap-button flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 text-center text-[11px] leading-tight transition min-[380px]:text-xs",
                     isActive ? "bg-panel text-mint shadow-sm" : "text-slate-500 hover:bg-panel/70 hover:text-ink"
                   ].join(" ")
                 }
               >
                 <Icon aria-hidden="true" size={20} />
-                <span>{item.label}</span>
+                <span className="min-w-0 break-words">{item.label}</span>
               </NavLink>
             );
           })}

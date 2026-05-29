@@ -10,8 +10,8 @@ self.addEventListener("push", (event) => {
   const title = data.title || "QuitKit";
   const options = {
     body: data.body || "Есть новое напоминание",
-    icon: "/icon.svg",
-    badge: "/icon.svg",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/maskable-192.png",
     data: {
       url: data.url || "/"
     }

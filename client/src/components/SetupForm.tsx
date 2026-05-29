@@ -32,7 +32,7 @@ export function SetupForm({ onStarted }: SetupFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
+    <form onSubmit={handleSubmit} className="surface-in space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
       <div>
         <h2 className="text-xl font-semibold">Старт курса</h2>
         <p className="mt-1 text-sm text-slate-600">Два поля, и дальше приложение само соберёт 25 дней.</p>
@@ -65,10 +65,10 @@ export function SetupForm({ onStarted }: SetupFormProps) {
       <button
         type="submit"
         disabled={busy}
-        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-mint px-4 font-semibold text-white disabled:opacity-60"
+        className="tap-button flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-md bg-mint px-4 font-semibold text-white disabled:opacity-60"
       >
         <Rocket size={19} />
-        {busy ? "Запускаю..." : "Начать"}
+        <span className="break-words">{busy ? "Запускаю..." : "Начать"}</span>
       </button>
     </form>
   );

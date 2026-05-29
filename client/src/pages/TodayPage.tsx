@@ -15,6 +15,7 @@ export function TodayPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [showVideo, setShowVideo] = useState(false);
   const [showVideoOffer, setShowVideoOffer] = useState(false);
+  const [justTaken, setJustTaken] = useState(false);
   const notifiedDose = useRef<number | null>(null);
 
   const load = useCallback(async () => {
@@ -39,12 +40,12 @@ export function TodayPage() {
 
   useEffect(() => {
     const nextDose = state?.nextDose;
-    if (!nextDose || secondsUntil(nextDose.plannedTime, effectiveNow) > 0 || notifiedDose.current === nextDose.id) {
+    if (!nextDose || secondsUntil(nextDose.effectiveTime, effectiveNow) > 0 || notifiedDose.current === nextDose.id) {
       return;
     }
     notifiedDose.current = nextDose.id;
     if ("Notification" in window && Notification.permission === "granted") {
-      void new Notification("Пора принять таблетку", { body: `Слот на ${formatTime(nextDose.plannedTime)}` });
+      void new Notification("Пора принять таблетку", { body: `Слот на ${formatTime(nextDose.effectiveTime)}` });
     }
     navigator.vibrate?.(80);
   }, [effectiveNow, state?.nextDose]);
@@ -57,6 +58,8 @@ export function TodayPage() {
     try {
       await api.takeDose(state.nextDose.id);
       navigator.vibrate?.(40);
+      setJustTaken(true);
+      window.setTimeout(() => setJustTaken(false), 800);
       await load();
     } finally {
       setBusy(false);
@@ -88,7 +91,7 @@ export function TodayPage() {
     return <SetupForm onStarted={load} />;
   }
 
-  const nextSeconds = state.nextDose ? secondsUntil(state.nextDose.plannedTime, effectiveNow) : 0;
+  const nextSeconds = state.nextDose ? secondsUntil(state.nextDose.effectiveTime, effectiveNow) : 0;
   const takenToday = state.todaySchedule.filter(
     (dose) => dose.status === "taken" || (dose.status === "late" && dose.takenAt)
   ).length;
@@ -100,7 +103,7 @@ export function TodayPage() {
       {error ? <p className="rounded-md border border-coral/30 bg-coral/10 p-3 text-sm text-coral">{error}</p> : null}
       {notice ? <p className="rounded-md border border-sky/30 bg-sky/10 p-3 text-sm text-sky">{notice}</p> : null}
 
-      <section className="overflow-hidden rounded-md border border-line bg-panel shadow-sm">
+      <section className="surface-in overflow-hidden rounded-md border border-line bg-panel shadow-sm">
         <div className="bg-gradient-to-br from-mint/20 via-sky/20 to-amber/20 p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -126,7 +129,7 @@ export function TodayPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3">
+      <section className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
         <BenefitCard label="Не выкурено" value={String(state.benefits.cigarettesAvoided)} suffix="шт." />
         <BenefitCard
           label="Сэкономлено"
@@ -136,7 +139,7 @@ export function TodayPage() {
       </section>
 
       {state.mode === "course" ? (
-        <section className="rounded-md border border-line bg-panel p-4 shadow-sm">
+        <section className="surface-in rounded-md border border-line bg-panel p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between text-sm text-slate-600">
             <span>День {state.currentDay} из 25</span>
             <span>{state.currentPhase ? `Фаза ${state.currentPhase}` : "Курс"}</span>
@@ -144,8 +147,11 @@ export function TodayPage() {
 
           <div className="rounded-md bg-paper p-4 text-center">
             <p className="text-sm text-slate-600">
-              {state.nextDose ? `Следующий приём в ${formatTime(state.nextDose.plannedTime)}` : "На сегодня всё"}
+              {state.nextDose ? `Следующий приём в ${formatTime(state.nextDose.effectiveTime)}` : "На сегодня всё"}
             </p>
+            {state.nextDose?.shifted ? (
+              <p className="mt-1 text-xs text-amber">сдвинуто от фактического приёма</p>
+            ) : null}
             <p className="mt-2 text-5xl font-semibold tabular-nums text-ink">
               {state.nextDose ? secondsToClock(nextSeconds) : "готово"}
             </p>
@@ -154,10 +160,13 @@ export function TodayPage() {
           <button
             disabled={!state.nextDose || busy}
             onClick={handleTakeDose}
-            className="mt-4 flex min-h-14 w-full items-center justify-center gap-2 rounded-md bg-mint px-4 text-lg font-semibold text-white shadow-sm disabled:bg-slate-200 disabled:text-slate-500"
+            className={[
+              "tap-button mt-4 flex min-h-14 w-full min-w-0 items-center justify-center gap-2 rounded-md px-4 text-lg font-semibold text-white shadow-sm disabled:bg-slate-200 disabled:text-slate-500",
+              justTaken ? "success-pop bg-emerald-500" : "bg-mint"
+            ].join(" ")}
           >
             <Check size={22} />
-            Принял
+            <span className="break-words">{justTaken ? "Готово" : "Принял"}</span>
           </button>
 
           <p className="mt-3 text-center text-sm text-slate-600">
@@ -165,28 +174,32 @@ export function TodayPage() {
           </p>
         </section>
       ) : (
-        <section className="rounded-md border border-mint/30 bg-mint/10 p-4 shadow-sm">
+        <section className="surface-in rounded-md border border-mint/30 bg-mint/10 p-4 shadow-sm">
           <p className="text-sm font-medium text-emerald-700">Курс завершён</p>
           <h2 className="mt-1 text-2xl font-semibold">Теперь держим свободу</h2>
         </section>
       )}
 
       {state.quote ? (
-        <section className="rounded-md border border-line bg-panel p-4 shadow-sm">
+        <section className="surface-in rounded-md border border-line bg-panel p-4 shadow-sm">
           <p className="text-base leading-relaxed text-slate-700">“{state.quote.text}”</p>
           {state.quote.author ? <p className="mt-2 text-sm text-slate-500">{state.quote.author}</p> : null}
         </section>
       ) : null}
 
       {state.todaySchedule.length > 0 ? (
-        <section className="rounded-md border border-line bg-panel p-4 shadow-sm">
+        <section className="surface-in rounded-md border border-line bg-panel p-4 shadow-sm">
           <h2 className="mb-3 font-semibold">Сегодняшние слоты</h2>
           <div className="space-y-2">
             {state.todaySchedule.map((dose) => (
-              <div key={dose.id} className="flex items-center justify-between rounded-md bg-paper px-3 py-2">
-                <div>
-                  <p className="font-medium">{formatTime(dose.plannedTime)}</p>
-                  {dose.flexible ? <p className="text-xs text-slate-500">гибкий слот</p> : null}
+              <div key={dose.id} className="tap-button flex min-w-0 items-center justify-between gap-3 rounded-md bg-paper px-3 py-2">
+                <div className="min-w-0">
+                  <p className="font-medium">{formatTime(dose.effectiveTime)}</p>
+                  {dose.shifted ? (
+                    <p className="text-xs text-amber">план: {formatTime(dose.plannedTime)}</p>
+                  ) : dose.flexible ? (
+                    <p className="text-xs text-slate-500">гибкий слот</p>
+                  ) : null}
                 </div>
                 <StatusBadge status={dose.status} />
               </div>
@@ -198,15 +211,15 @@ export function TodayPage() {
       <button
         disabled={busy}
         onClick={handleSmoke}
-        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-amber/40 bg-amber/10 px-4 font-semibold text-amber disabled:opacity-60"
+        className="tap-button flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-md border border-amber/40 bg-amber/10 px-4 font-semibold text-amber disabled:opacity-60"
       >
         <Cigarette size={20} />
-        Покурил
+        <span className="break-words">Покурил</span>
       </button>
 
       <button
         onClick={load}
-        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md text-sm text-slate-500 hover:bg-white/70"
+        className="tap-button flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-md text-sm text-slate-500 hover:bg-white/70"
       >
         <RotateCw size={16} />
         Обновить
@@ -222,20 +235,20 @@ export function TodayPage() {
             <p className="text-sm leading-relaxed text-slate-600">
               Можно сразу вернуться в курс. Если хочется напомнить себе, ради чего это всё, посмотри послание.
             </p>
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
               <button
                 onClick={() => {
                   setShowVideoOffer(false);
                   setShowVideo(true);
                 }}
-                className="flex min-h-11 items-center justify-center gap-2 rounded-md bg-coral px-3 font-semibold text-white"
+                className="tap-button flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-md bg-coral px-3 font-semibold text-white"
               >
                 <PlayCircle size={18} />
-                Посмотреть
+                <span className="break-words">Посмотреть</span>
               </button>
               <button
                 onClick={() => setShowVideoOffer(false)}
-                className="min-h-11 rounded-md border border-line px-3 font-semibold text-slate-600"
+                className="tap-button min-h-11 min-w-0 rounded-md border border-line px-3 font-semibold text-slate-600"
               >
                 Не сейчас
               </button>
@@ -251,10 +264,10 @@ export function TodayPage() {
 
 function BenefitCard({ label, value, suffix }: { label: string; value: string; suffix: string }) {
   return (
-    <div className="rounded-md border border-line bg-panel p-4 shadow-sm">
+    <div className="surface-in benefit-flash min-w-0 rounded-md border border-line bg-panel p-4 shadow-sm">
       <p className="text-sm text-slate-600">{label}</p>
-      <div className="mt-1 flex items-end gap-1">
-        <p className="text-3xl font-semibold">{value}</p>
+      <div className="mt-1 flex min-w-0 items-end gap-1">
+        <p className="min-w-0 break-words text-3xl font-semibold">{value}</p>
         <p className="pb-1 text-sm text-slate-500">{suffix}</p>
       </div>
     </div>

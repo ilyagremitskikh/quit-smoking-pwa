@@ -76,8 +76,10 @@ export interface DoseView {
   dayNumber: number;
   phase: number;
   plannedTime: string;
+  effectiveTime: string;
   intervalMinutes: number;
   flexible: boolean;
   status: DoseComputedStatus;
   takenAt: string | null;
+  shifted: boolean;
 }

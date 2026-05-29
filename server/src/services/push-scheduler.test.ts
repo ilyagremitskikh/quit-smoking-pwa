@@ -61,6 +61,16 @@ describe("push scheduler", () => {
     expect(sender.sent).toHaveLength(2);
   });
 
+  it("uses effective time shifted from late taken dose", () => {
+    repo.takeDose(1, new Date("2026-05-29T03:20:00.000Z"));
+
+    expect(findDueReminders(db, new Date("2026-05-29T05:10:00.000Z"))).toHaveLength(0);
+
+    const due = findDueReminders(db, new Date("2026-05-29T05:21:00.000Z"));
+    expect(due).toHaveLength(1);
+    expect(due[0]?.dose.id).toBe(2);
+  });
+
   it("does not send after day 25", () => {
     expect(findDueReminders(db, new Date("2026-06-30T03:16:00.000Z"))).toHaveLength(0);
   });
