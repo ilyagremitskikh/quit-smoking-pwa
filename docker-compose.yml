@@ -1,0 +1,16 @@
+services:
+  quitkit:
+    build: .
+    container_name: quitkit
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Yekaterinburg
+      - DATA_DIR=/app/data
+      - MEDIA_DIR=/app/media
+      - CLIENT_DIST=/app/client/dist
+    volumes:
+      - ./data:/app/data
+      - ./media:/app/media
+    ports:
+      - "3000:3000"
