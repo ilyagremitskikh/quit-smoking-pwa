@@ -99,6 +99,12 @@ export interface SmokeResponse {
   shouldOfferVideo: boolean;
 }
 
+export interface PushConfig {
+  publicKey: string | null;
+  available: boolean;
+  remindersEnabled: boolean;
+}
+
 export type DemoScenarioId = "day1" | "day5" | "day13" | "day21" | "day25" | "after";
 
 export interface DemoScenarioResponse {

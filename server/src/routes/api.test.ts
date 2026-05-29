@@ -84,4 +84,28 @@ describe("api routes", () => {
     expect(smoke.json().smoke.kind).toBe("relapse");
     expect(smoke.json().shouldOfferVideo).toBe(true);
   });
+
+  it("stores push subscription and exposes config", async () => {
+    process.env.VAPID_PUBLIC_KEY = "public";
+    process.env.VAPID_PRIVATE_KEY = "private";
+    process.env.VAPID_SUBJECT = "mailto:test@example.com";
+
+    const subscribe = await app.inject({
+      method: "POST",
+      url: "/api/push/subscribe",
+      payload: {
+        endpoint: "https://push.example.test/sub",
+        keys: {
+          p256dh: "key",
+          auth: "auth"
+        }
+      }
+    });
+    const config = await app.inject({ method: "GET", url: "/api/push/config" });
+
+    expect(subscribe.statusCode).toBe(201);
+    expect(subscribe.json().subscription.endpoint).toBe("https://push.example.test/sub");
+    expect(config.json().available).toBe(true);
+    expect(config.json().remindersEnabled).toBe(true);
+  });
 });

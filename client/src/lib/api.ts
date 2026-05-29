@@ -4,6 +4,7 @@ import type {
   DemoScenarioResponse,
   DoseView,
   ProgressResponse,
+  PushConfig,
   Settings,
   SmokeResponse
 } from "./types.js";
@@ -43,6 +44,22 @@ export const api = {
   progress: () => request<ProgressResponse>("/api/progress"),
   updateSettings: (input: { packPrice?: number | null; remindersEnabled?: boolean; cigarettesPerDay?: number }) =>
     request<Settings>("/api/settings", { method: "PUT", body: JSON.stringify(input) }),
+  pushConfig: () => request<PushConfig>("/api/push/config"),
+  subscribePush: (subscription: PushSubscriptionJSON) =>
+    request<{ config: PushConfig }>("/api/push/subscribe", {
+      method: "POST",
+      body: JSON.stringify(subscription)
+    }),
+  unsubscribePush: (endpoint: string) =>
+    request("/api/push/subscribe", {
+      method: "DELETE",
+      body: JSON.stringify({ endpoint })
+    }),
+  testPush: (endpoint: string) =>
+    request("/api/push/test", {
+      method: "POST",
+      body: JSON.stringify({ endpoint })
+    }),
   demoScenario: (scenario: DemoScenarioId) =>
     request<DemoScenarioResponse>("/api/demo/scenario", {
       method: "POST",

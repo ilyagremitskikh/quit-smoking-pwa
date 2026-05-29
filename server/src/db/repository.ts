@@ -4,6 +4,9 @@ import type {
   DoseLogRow,
   DoseScheduleRow,
   DoseView,
+  PushDeliveryKind,
+  PushDeliveryStatus,
+  PushSubscriptionRow,
   SmokeKind,
   QuoteRow,
   SettingsRow,
@@ -47,6 +50,10 @@ export interface SmokeEventView extends SmokeLogRow {
 
 export class Repository {
   constructor(private readonly db: Database.Database) {}
+
+  get database(): Database.Database {
+    return this.db;
+  }
 
   getState(now = new Date()): AppState {
     const course = this.getCurrentCourse();
@@ -239,6 +246,100 @@ export class Repository {
         input.cigarettesPerDay === undefined ? current.cigarettes_per_day : input.cigarettesPerDay
       );
     return this.getSettings();
+  }
+
+  getPushConfig(): { publicKey: string | null; available: boolean; remindersEnabled: boolean } {
+    const publicKey = process.env.VAPID_PUBLIC_KEY ?? null;
+    const privateKey = process.env.VAPID_PRIVATE_KEY ?? null;
+    const subject = process.env.VAPID_SUBJECT ?? null;
+    return {
+      publicKey,
+      available: Boolean(publicKey && privateKey && subject),
+      remindersEnabled: this.getSettings().reminders_enabled === 1
+    };
+  }
+
+  upsertPushSubscription(input: { endpoint: string; p256dh: string; auth: string }): PushSubscriptionRow {
+    const existing = this.db
+      .prepare("SELECT * FROM push_subscription WHERE endpoint = ?")
+      .get(input.endpoint) as PushSubscriptionRow | undefined;
+
+    if (existing) {
+      this.db
+        .prepare(`
+          UPDATE push_subscription
+          SET p256dh = ?, auth = ?, updated_at = ?, disabled_at = NULL, last_error = NULL
+          WHERE endpoint = ?
+        `)
+        .run(input.p256dh, input.auth, isoFromDate(new Date()), input.endpoint);
+    } else {
+      this.db
+        .prepare(`
+          INSERT INTO push_subscription (endpoint, p256dh, auth, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?)
+        `)
+        .run(input.endpoint, input.p256dh, input.auth, isoFromDate(new Date()), isoFromDate(new Date()));
+    }
+
+    this.db.prepare("UPDATE settings SET reminders_enabled = 1 WHERE id = 1").run();
+    return this.getPushSubscriptionByEndpoint(input.endpoint)!;
+  }
+
+  disablePushSubscription(endpoint: string, error?: string): void {
+    this.db
+      .prepare(`
+        UPDATE push_subscription
+        SET disabled_at = ?, updated_at = ?, last_error = COALESCE(?, last_error)
+        WHERE endpoint = ?
+      `)
+      .run(isoFromDate(new Date()), isoFromDate(new Date()), error ?? null, endpoint);
+  }
+
+  getActivePushSubscriptions(): PushSubscriptionRow[] {
+    return this.db
+      .prepare("SELECT * FROM push_subscription WHERE disabled_at IS NULL ORDER BY id")
+      .all() as PushSubscriptionRow[];
+  }
+
+  getPushSubscriptionByEndpoint(endpoint: string): PushSubscriptionRow | undefined {
+    return this.db
+      .prepare("SELECT * FROM push_subscription WHERE endpoint = ?")
+      .get(endpoint) as PushSubscriptionRow | undefined;
+  }
+
+  recordPushDelivery(input: {
+    scheduleId: number | null;
+    subscriptionId: number;
+    kind: PushDeliveryKind;
+    status: PushDeliveryStatus;
+    error?: string | null;
+    sentAt?: Date;
+  }): void {
+    this.db
+      .prepare(`
+        INSERT OR IGNORE INTO push_delivery
+          (schedule_id, subscription_id, kind, sent_at, status, error)
+        VALUES
+          (?, ?, ?, ?, ?, ?)
+      `)
+      .run(
+        input.scheduleId,
+        input.subscriptionId,
+        input.kind,
+        isoFromDate(input.sentAt ?? new Date()),
+        input.status,
+        input.error ?? null
+      );
+
+    if (input.status === "sent") {
+      this.db
+        .prepare("UPDATE push_subscription SET last_success_at = ?, last_error = NULL, updated_at = ? WHERE id = ?")
+        .run(isoFromDate(input.sentAt ?? new Date()), isoFromDate(new Date()), input.subscriptionId);
+    } else {
+      this.db
+        .prepare("UPDATE push_subscription SET last_error = ?, updated_at = ? WHERE id = ?")
+        .run(input.error ?? "Push delivery failed", isoFromDate(new Date()), input.subscriptionId);
+    }
   }
 
   createDemoScenario(scenario: DemoScenarioId): { demoNow: string; state: AppState } {

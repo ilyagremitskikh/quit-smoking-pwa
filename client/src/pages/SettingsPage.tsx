@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useState } from "react";
-import { FlaskConical, RotateCcw, Save } from "lucide-react";
+import { Bell, FlaskConical, RotateCcw, Save, Send } from "lucide-react";
 import { SetupForm } from "../components/SetupForm.js";
 import { api, clearDemoNow, getDemoNow, setDemoNow } from "../lib/api.js";
+import { disablePushReminders, enablePushReminders, getPushUiState, sendTestPush, type PushUiState } from "../lib/push.js";
 import { formatDateTimeLocalValue } from "../lib/time.js";
 import type { AppState, DemoScenarioId } from "../lib/types.js";
 
@@ -21,6 +22,7 @@ export function SettingsPage() {
   const [restartTime, setRestartTime] = useState(formatDateTimeLocalValue().slice(11, 16));
   const [armedRestart, setArmedRestart] = useState(false);
   const [demoNowState, setDemoNowState] = useState<string | null>(() => getDemoNow());
+  const [pushState, setPushState] = useState<PushUiState | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   async function load() {
@@ -29,6 +31,7 @@ export function SettingsPage() {
     setPackPrice(next.settings.pack_price?.toString() ?? "");
     setCigarettesPerDay(next.settings.cigarettes_per_day.toString());
     setRestartTime(next.course?.first_dose_time ?? formatDateTimeLocalValue().slice(11, 16));
+    await refreshPushState();
   }
 
   useEffect(() => {
@@ -79,6 +82,44 @@ export function SettingsPage() {
     await load();
   }
 
+  async function refreshPushState() {
+    try {
+      setPushState(await getPushUiState());
+    } catch {
+      setPushState(null);
+    }
+  }
+
+  async function handleEnablePush() {
+    try {
+      setPushState(await enablePushReminders());
+      setMessage("Уведомления включены. Для iPhone важно запускать приложение с экрана Домой.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Не получилось включить уведомления");
+      await refreshPushState();
+    }
+  }
+
+  async function handleDisablePush() {
+    try {
+      setPushState(await disablePushReminders());
+      setMessage("Уведомления отключены на этом устройстве.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Не получилось отключить уведомления");
+      await refreshPushState();
+    }
+  }
+
+  async function handleTestPush() {
+    try {
+      await sendTestPush();
+      setMessage("Тестовое уведомление отправлено.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Не получилось отправить тест");
+      await refreshPushState();
+    }
+  }
+
   if (!state) {
     return <p className="rounded-md border border-line bg-panel p-4 text-slate-600 shadow-sm">Загружаю настройки...</p>;
   }
@@ -119,10 +160,60 @@ export function SettingsPage() {
     </section>
   );
 
+  const pushPanel = (
+    <section className="space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
+      <div>
+        <div className="mb-1 flex items-center gap-2">
+          <Bell className="text-sky" size={20} />
+          <h2 className="text-lg font-semibold">Уведомления</h2>
+        </div>
+        <p className="text-sm text-slate-600">
+          На iPhone push работает у PWA, добавленной на экран Домой и открытой оттуда.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <StatusPill label="Сервер" value={pushState?.serverAvailable ? "готов" : "нет VAPID"} ok={Boolean(pushState?.serverAvailable)} />
+        <StatusPill label="Устройство" value={supportLabel(pushState)} ok={pushState?.support === "supported"} />
+        <StatusPill label="Разрешение" value={permissionLabel(pushState)} ok={pushState?.permission === "granted"} />
+        <StatusPill label="Подписка" value={pushState?.subscribed ? "активна" : "нет"} ok={Boolean(pushState?.subscribed)} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-2">
+        <button
+          onClick={() => void handleEnablePush()}
+          disabled={!pushState?.serverAvailable}
+          className="flex min-h-12 items-center justify-center gap-2 rounded-md bg-sky px-4 font-semibold text-white disabled:bg-slate-200 disabled:text-slate-500"
+        >
+          <Bell size={18} />
+          Включить уведомления
+        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => void handleTestPush()}
+            disabled={!pushState?.subscribed}
+            className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-sky/40 bg-sky/10 px-3 font-semibold text-sky disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
+          >
+            <Send size={16} />
+            Тест
+          </button>
+          <button
+            onClick={() => void handleDisablePush()}
+            disabled={!pushState?.subscribed}
+            className="min-h-11 rounded-md border border-line px-3 font-semibold text-slate-600 disabled:text-slate-400"
+          >
+            Отключить
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+
   if (state.setupNeeded) {
     return (
       <div className="space-y-4">
         {message ? <p className="rounded-md border border-line bg-panel p-3 text-sm text-slate-600 shadow-sm">{message}</p> : null}
+        {pushPanel}
         {demoPanel}
         <SetupForm onStarted={load} />
       </div>
@@ -168,6 +259,8 @@ export function SettingsPage() {
         </button>
       </form>
 
+      {pushPanel}
+
       {demoPanel}
 
       <section className="space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
@@ -194,4 +287,42 @@ export function SettingsPage() {
       </section>
     </div>
   );
+}
+
+function StatusPill({ label, value, ok }: { label: string; value: string; ok: boolean }) {
+  return (
+    <div className={["rounded-md border px-3 py-2", ok ? "border-mint/30 bg-mint/10" : "border-line bg-paper"].join(" ")}>
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className={["font-medium", ok ? "text-emerald-700" : "text-slate-700"].join(" ")}>{value}</p>
+    </div>
+  );
+}
+
+function supportLabel(state: PushUiState | null): string {
+  if (!state) {
+    return "проверка";
+  }
+  if (state.support === "unsupported") {
+    return "нет";
+  }
+  if (state.support === "not-standalone") {
+    return "Safari";
+  }
+  return "готово";
+}
+
+function permissionLabel(state: PushUiState | null): string {
+  if (!state) {
+    return "проверка";
+  }
+  if (state.permission === "unsupported") {
+    return "нет";
+  }
+  if (state.permission === "default") {
+    return "не спросили";
+  }
+  if (state.permission === "denied") {
+    return "запрещено";
+  }
+  return "разрешено";
 }

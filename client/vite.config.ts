@@ -6,13 +6,17 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "public",
+      filename: "sw.js",
       registerType: "autoUpdate",
       manifest: {
         name: "QuitKit",
         short_name: "QuitKit",
         description: "Трекер курса цитизина и дней без сигарет",
-        theme_color: "#0d1117",
-        background_color: "#0d1117",
+        id: "/",
+        theme_color: "#fffaf0",
+        background_color: "#fffaf0",
         display: "standalone",
         start_url: "/",
         icons: [
@@ -24,7 +28,7 @@ export default defineConfig({
           }
         ]
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico}"]
       }
     })

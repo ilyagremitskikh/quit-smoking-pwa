@@ -1,6 +1,8 @@
 export type CourseStatus = "active" | "done" | "aborted";
 export type DoseComputedStatus = "pending" | "taken" | "late" | "skipped";
 export type SmokeKind = "transition" | "relapse";
+export type PushDeliveryKind = "initial" | "retry" | "test";
+export type PushDeliveryStatus = "sent" | "failed";
 
 export interface CourseRow {
   id: number;
@@ -45,6 +47,28 @@ export interface SettingsRow {
   pack_price: number | null;
   reminders_enabled: 0 | 1;
   cigarettes_per_day: number;
+}
+
+export interface PushSubscriptionRow {
+  id: number;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  created_at: string;
+  updated_at: string;
+  disabled_at: string | null;
+  last_success_at: string | null;
+  last_error: string | null;
+}
+
+export interface PushDeliveryRow {
+  id: number;
+  schedule_id: number | null;
+  subscription_id: number;
+  kind: PushDeliveryKind;
+  sent_at: string;
+  status: PushDeliveryStatus;
+  error: string | null;
 }
 
 export interface DoseView {
