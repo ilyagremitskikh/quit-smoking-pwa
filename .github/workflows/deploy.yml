@@ -33,9 +33,3 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/${{ github.repository }}:latest
-      - name: Trigger deploy webhook
-        if: github.event_name == 'push' && secrets.DEPLOY_WEBHOOK_URL != ''
-        run: |
-          curl -fsS -X POST "${{ secrets.DEPLOY_WEBHOOK_URL }}" \
-            -H "X-QuitKit-Signature: sha256=$(echo -n deploy | openssl dgst -sha256 -hmac '${{ secrets.DEPLOY_SECRET }}' | awk '{print $2}')" \
-            -d deploy
