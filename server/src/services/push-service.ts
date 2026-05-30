@@ -1,6 +1,7 @@
 import webPush, { PushSubscription } from "web-push";
 import type { PushSubscriptionRow } from "../types/domain.js";
 import { Repository } from "../db/repository.js";
+import { buildTestPayload } from "./push-messages.js";
 
 export interface PushPayload {
   title: string;
@@ -43,12 +44,7 @@ export async function sendTestPush(repo: Repository, sender: PushSender, endpoin
   }
 
   try {
-    await sender.send(subscription, {
-      title: "QuitKit на связи",
-      body: "Уведомления работают",
-      url: "/",
-      badgeCount: 1
-    });
+    await sender.send(subscription, buildTestPayload());
     repo.recordPushDelivery({
       scheduleId: null,
       subscriptionId: subscription.id,

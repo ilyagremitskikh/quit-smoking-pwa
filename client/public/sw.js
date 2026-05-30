@@ -7,9 +7,9 @@ precacheAndRoute(self.__WB_MANIFEST);
 
 self.addEventListener("push", (event) => {
   const data = event.data ? event.data.json() : {};
-  const title = data.title || "QuitKit";
+  const title = data.title || "QuitKit 🔔";
   const options = {
-    body: data.body || "Есть новое напоминание",
+    body: data.body || "Напоминание о приёме",
     icon: "/icons/icon-192.png",
     badge: "/icons/maskable-192.png",
     data: {
