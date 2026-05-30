@@ -161,52 +161,58 @@ export function SettingsPage() {
     </section>
   );
 
+  const pushNotice = pushHint(pushState);
   const pushPanel = (
     <section className="surface-in space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
       <div>
         <div className="mb-1 flex items-center gap-2">
           <Bell className="text-sky" size={20} />
-          <h2 className="heading-soft text-ink">Уведомления</h2>
+          <h2 className="heading-soft text-ink">Напоминания о приёме</h2>
         </div>
         <p className="copy-soft">
-          На iPhone push работает у PWA, добавленной на экран Домой и открытой оттуда.
+          Пуш приходит в момент дозы и мягко напоминает, пока вы её не отметите.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 text-sm min-[380px]:grid-cols-2">
-        <StatusPill label="Сервер" value={pushState?.serverAvailable ? "готов" : "нет VAPID"} ok={Boolean(pushState?.serverAvailable)} />
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <StatusPill label="Сервер" value={pushState?.serverAvailable ? "готов" : "нет ключей"} ok={Boolean(pushState?.serverAvailable)} />
         <StatusPill label="Устройство" value={supportLabel(pushState)} ok={pushState?.support === "supported"} />
         <StatusPill label="Разрешение" value={permissionLabel(pushState)} ok={pushState?.permission === "granted"} />
-        <StatusPill label="Подписка" value={pushState?.subscribed ? "активна" : "нет"} ok={Boolean(pushState?.subscribed)} />
+        <StatusPill label="Подписка" value={pushState?.subscribed ? "активна" : "выключена"} ok={Boolean(pushState?.subscribed)} />
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
-        <button
-          onClick={() => void handleEnablePush()}
-          disabled={!pushState?.serverAvailable}
-          className="tap-button flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-md bg-sky px-4 text-center font-extrabold text-white disabled:bg-slate-200 disabled:text-slate-500"
-        >
-          <Bell size={18} />
-          <span className="min-w-0 break-words">Включить уведомления</span>
-        </button>
+      {pushNotice ? (
+        <p className="rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-xs leading-snug text-amber">
+          {pushNotice}
+        </p>
+      ) : null}
+
+      {pushState?.subscribed ? (
         <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
           <button
             onClick={() => void handleTestPush()}
-            disabled={!pushState?.subscribed}
-            className="tap-button flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-sky/40 bg-sky/10 px-3 font-extrabold text-sky disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
+            className="tap-button flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-md bg-sky px-4 font-extrabold text-white"
           >
             <Send size={16} />
-            Тест
+            Проверить
           </button>
           <button
             onClick={() => void handleDisablePush()}
-            disabled={!pushState?.subscribed}
-            className="tap-button min-h-11 min-w-0 rounded-md border border-line px-3 font-extrabold text-slate-600 disabled:text-slate-400"
+            className="tap-button min-h-12 min-w-0 rounded-md border border-line px-3 font-extrabold text-slate-600"
           >
-            Отключить
+            Выключить
           </button>
         </div>
-      </div>
+      ) : (
+        <button
+          onClick={() => void handleEnablePush()}
+          disabled={!canEnablePush(pushState)}
+          className="tap-button flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-md bg-sky px-4 text-center font-extrabold text-white disabled:bg-slate-200 disabled:text-slate-500"
+        >
+          <Bell size={18} />
+          <span className="min-w-0 break-words">Включить напоминания</span>
+        </button>
+      )}
     </section>
   );
 
@@ -299,7 +305,7 @@ function supportLabel(state: PushUiState | null): string {
     return "нет";
   }
   if (state.support === "not-standalone") {
-    return "Safari";
+    return "нужна установка";
   }
   return "готово";
 }
@@ -312,10 +318,33 @@ function permissionLabel(state: PushUiState | null): string {
     return "нет";
   }
   if (state.permission === "default") {
-    return "не спросили";
+    return "не запрошено";
   }
   if (state.permission === "denied") {
     return "запрещено";
   }
   return "разрешено";
+}
+
+function canEnablePush(state: PushUiState | null): boolean {
+  return Boolean(state?.serverAvailable) && state?.support === "supported" && state?.permission !== "denied";
+}
+
+function pushHint(state: PushUiState | null): string | null {
+  if (!state) {
+    return null;
+  }
+  if (!state.serverAvailable) {
+    return "Сервер не настроен для уведомлений (нет VAPID-ключей).";
+  }
+  if (state.support === "unsupported") {
+    return "Этот браузер не поддерживает пуш-уведомления.";
+  }
+  if (state.support === "not-standalone") {
+    return "На iPhone добавьте приложение на экран «Домой» и откройте его оттуда.";
+  }
+  if (state.permission === "denied") {
+    return "Уведомления запрещены — включите их в настройках браузера для этого сайта.";
+  }
+  return null;
 }

@@ -1,7 +1,7 @@
 export type CourseStatus = "active" | "done" | "aborted";
 export type DoseComputedStatus = "pending" | "taken" | "late" | "skipped";
 export type SmokeKind = "transition" | "relapse";
-export type PushDeliveryKind = "initial" | "retry" | "test";
+export type PushDeliveryKind = "initial" | "retry" | "final" | "test";
 export type PushDeliveryStatus = "sent" | "failed";
 
 export interface CourseRow {
