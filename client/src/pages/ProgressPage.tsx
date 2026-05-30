@@ -36,12 +36,14 @@ export function ProgressPage() {
 
   const relapses = progress.smokeEvents.filter((smoke) => smoke.kind === "relapse").length;
   const transitions = progress.smokeEvents.filter((smoke) => smoke.kind === "transition").length;
+  const adherence = progress.adherence ?? { percent: 0, elapsedPlanned: 0, taken: 0, late: 0, skipped: 0 };
+  const streak = progress.streak ?? { currentStartedAt: null, currentDays: 0, currentHours: 0, recordDays: 0, recordHours: 0 };
   return (
     <div className="space-y-4">
       <section className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
-        <Stat label="Адхеренс" value={`${progress.adherence.percent}%`} />
+        <Stat label="Адхеренс" value={`${adherence.percent}%`} />
         <Stat label="После отказа" value={`${progress.benefits.smokeFreeDays} д.`} />
-        <Stat label="Рекорд" value={`${progress.streak.recordDays} д.`} />
+        <Stat label="Рекорд" value={`${streak.recordDays} д.`} />
         <Stat label="Не выкурено" value={String(progress.benefits.cigarettesAvoided)} />
         <Stat label="Сэкономлено" value={progress.benefits.moneySaved === null ? "—" : `${progress.benefits.moneySaved} ₽`} />
       </section>

@@ -4,17 +4,10 @@ import { HoldButton } from "../components/HoldButton.js";
 import { SetupForm } from "../components/SetupForm.js";
 import { StatusBadge } from "../components/StatusBadge.js";
 import { VideoModal } from "../components/VideoModal.js";
-import { api, demoEnabled, getDemoNow, setDemoNow } from "../lib/api.js";
+import { api, getDemoNow } from "../lib/api.js";
 import { haptic, hapticStrong } from "../lib/haptics.js";
 import { formatDateTimeLocalValue, formatTime, secondsToClock, secondsUntil } from "../lib/time.js";
-import type { AppState, DemoScenarioId, DoseView, ProgressResponse, SmokeLog } from "../lib/types.js";
-
-const demoTabs: Array<{ id: DemoScenarioId; label: string }> = [
-  { id: "day1", label: "День 1" },
-  { id: "day5", label: "День 5" },
-  { id: "after", label: "После" },
-  { id: "day21", label: "Срыв" }
-];
+import type { AppState, DoseView, ProgressResponse, SmokeLog } from "../lib/types.js";
 
 type UndoToast =
   | { kind: "dose"; scheduleId: number; text: string }
@@ -181,13 +174,6 @@ export function TodayPage() {
     }
   }
 
-  async function handleDemoTab(scenario: DemoScenarioId) {
-    const result = await api.demoScenario(scenario);
-    setDemoNow(result.demoNow);
-    setState(result.state);
-    setProgress(await api.progress());
-  }
-
   function showUndo(next: UndoToast) {
     clearUndoTimer();
     setUndoToast(next);
@@ -213,11 +199,11 @@ export function TodayPage() {
   const daysToQuit = state.mode === "beforeCourse" ? 5 : Math.max(0, 5 - (state.currentDay ?? 5));
   const nextSeconds = state.nextDose ? secondsUntil(state.nextDose.effectiveTime, effectiveNow) : 0;
   const milestone = state.benefits.nextMilestone ?? state.benefits.currentMilestone;
-  const missedDay = progress?.missedDays[0] ?? null;
+  const missedDay = progress?.missedDays?.[0] ?? null;
 
   return (
     <div className="space-y-4 pb-8">
-      {demoEnabled ? <DemoTabs onSelect={(scenario) => void handleDemoTab(scenario)} /> : <StageChip state={state} />}
+      <StageChip state={state} />
 
       {error ? <p className="rounded-2xl border border-coral/30 bg-coral/10 p-3 text-sm text-coral">{error}</p> : null}
       {notice ? <p className="rounded-2xl border border-sky/30 bg-sky/10 p-3 text-sm text-sky">{notice}</p> : null}
@@ -397,25 +383,6 @@ export function TodayPage() {
       ) : null}
 
       {showVideo ? <VideoModal onClose={() => setShowVideo(false)} /> : null}
-    </div>
-  );
-}
-
-function DemoTabs({ onSelect }: { onSelect: (scenario: DemoScenarioId) => void }) {
-  return (
-    <div className="mb-1 grid grid-cols-4 rounded-full bg-white/75 p-1 shadow-soft">
-      {demoTabs.map((tab, index) => (
-        <button
-          key={tab.id}
-          onClick={() => onSelect(tab.id)}
-          className={[
-            "tap-button min-h-11 rounded-full px-2 text-sm font-black text-slate-500",
-            index === 0 ? "bg-white text-ink shadow-sm" : ""
-          ].join(" ")}
-        >
-          {tab.label}
-        </button>
-      ))}
     </div>
   );
 }
