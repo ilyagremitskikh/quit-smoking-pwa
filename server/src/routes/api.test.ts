@@ -9,6 +9,7 @@ describe("api routes", () => {
 
   beforeEach(async () => {
     process.env.NODE_ENV = "test";
+    delete process.env.ENABLE_DEMO;
     const db = new Database(":memory:");
     initializeDatabase(db);
     app = await buildApp(new Repository(db));
@@ -59,6 +60,33 @@ describe("api routes", () => {
     expect(smoke.statusCode).toBe(201);
     expect(smoke.json().smoke.kind).toBe("transition");
     expect(smoke.json().shouldOfferVideo).toBe(false);
+  });
+
+  it("hides demo scenarios unless explicitly enabled", async () => {
+    const demo = await app.inject({
+      method: "POST",
+      url: "/api/demo/scenario",
+      payload: { scenario: "day1" }
+    });
+
+    expect(demo.statusCode).toBe(404);
+  });
+
+  it("allows demo scenarios when enabled", async () => {
+    await app.close();
+    process.env.ENABLE_DEMO = "1";
+    const db = new Database(":memory:");
+    initializeDatabase(db);
+    app = await buildApp(new Repository(db));
+
+    const demo = await app.inject({
+      method: "POST",
+      url: "/api/demo/scenario",
+      payload: { scenario: "day1" }
+    });
+
+    expect(demo.statusCode).toBe(201);
+    expect(demo.json().state.setupNeeded).toBe(false);
   });
 
   it("marks day five smoke as relapse and offers video", async () => {
@@ -138,5 +166,123 @@ describe("api routes", () => {
 
     expect(shifted.json().nextDose.effectiveTime).toBe("2026-05-29T05:20:00.000Z");
     expect(shifted.json().nextDose.shifted).toBe(true);
+  });
+
+  it("accepts a corrected takenAt and marks late from that time", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/api/course",
+      payload: {
+        startDate: "2026-05-29T03:00:00.000Z",
+        firstDoseTime: "08:00"
+      }
+    });
+    const state = await app.inject({
+      method: "GET",
+      url: "/api/state",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T03:05:00.000Z" }
+    });
+    const firstDoseId = state.json().todaySchedule[0].id;
+
+    const dose = await app.inject({
+      method: "POST",
+      url: `/api/doses/${firstDoseId}/take`,
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T04:00:00.000Z" },
+      payload: { takenAt: "2026-05-29T03:30:00.000Z" }
+    });
+
+    expect(dose.statusCode).toBe(200);
+    expect(dose.json().takenAt).toBe("2026-05-29T03:30:00.000Z");
+    expect(dose.json().status).toBe("late");
+  });
+
+  it("deletes a smoke log and recalculates benefits", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/api/course",
+      payload: {
+        startDate: "2026-05-01T05:00:00.000Z",
+        firstDoseTime: "08:00"
+      }
+    });
+    const smoke = await app.inject({
+      method: "POST",
+      url: "/api/smoke",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-05T19:00:00.000Z" },
+      payload: {}
+    });
+
+    await app.inject({ method: "DELETE", url: `/api/smoke/${smoke.json().smoke.id}` });
+    const progress = await app.inject({
+      method: "GET",
+      url: "/api/progress",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-06T19:00:00.000Z" }
+    });
+
+    expect(progress.json().smokeEvents).toHaveLength(0);
+    expect(progress.json().benefits.smokeFreeHours).toBe(48);
+  });
+
+  it("calculates adherence only from elapsed slots", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/api/course",
+      payload: {
+        startDate: "2026-05-29T03:00:00.000Z",
+        firstDoseTime: "08:00"
+      }
+    });
+    const state = await app.inject({
+      method: "GET",
+      url: "/api/state",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T03:05:00.000Z" }
+    });
+    const firstDoseId = state.json().todaySchedule[0].id;
+    await app.inject({
+      method: "POST",
+      url: `/api/doses/${firstDoseId}/take`,
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T03:05:00.000Z" }
+    });
+
+    const progress = await app.inject({
+      method: "GET",
+      url: "/api/progress",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T03:05:00.000Z" }
+    });
+
+    expect(progress.json().adherence).toMatchObject({ percent: 100, elapsedPlanned: 1, taken: 1 });
+  });
+
+  it("bulk closes missed elapsed slots as skipped", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/api/course",
+      payload: {
+        startDate: "2026-05-29T03:00:00.000Z",
+        firstDoseTime: "08:00"
+      }
+    });
+
+    const progressBefore = await app.inject({
+      method: "GET",
+      url: "/api/progress",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-30T03:00:00.000Z" }
+    });
+    expect(progressBefore.json().missedDays[0]).toMatchObject({ dayNumber: 1, openSlots: 6 });
+
+    const close = await app.inject({
+      method: "POST",
+      url: "/api/days/1/close",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-30T03:00:00.000Z" },
+      payload: { mode: "skipped" }
+    });
+    const progressAfter = await app.inject({
+      method: "GET",
+      url: "/api/progress",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-30T03:00:00.000Z" }
+    });
+
+    expect(close.json().closed).toBe(6);
+    expect(progressAfter.json().days[0].skipped).toBe(6);
   });
 });

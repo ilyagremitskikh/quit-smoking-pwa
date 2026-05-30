@@ -15,8 +15,8 @@ export default defineConfig({
         short_name: "QuitKit",
         description: "Трекер курса цитизина и дней без сигарет",
         id: "/",
-        theme_color: "#fffaf0",
-        background_color: "#fffaf0",
+        theme_color: "#eef6f1",
+        background_color: "#eef6f1",
         display: "standalone",
         start_url: "/",
         icons: [

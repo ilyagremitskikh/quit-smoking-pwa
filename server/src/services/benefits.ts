@@ -1,5 +1,5 @@
 import type { CourseRow, SettingsRow, SmokeLogRow } from "../types/domain.js";
-import { addDaysToDateKey, localDateKey, localDateTimeToUtcIso } from "./time.js";
+import { APP_TIME_ZONE, addDaysToDateKey, localDateKey, localDateTimeToUtcIso } from "./time.js";
 
 export interface HealthMilestone {
   hours: number;
@@ -27,34 +27,35 @@ export const HEALTH_MILESTONES: HealthMilestone[] = [
   { hours: 720, title: "1 месяц", text: "Месяц без сигарет — сильная база для долгой свободы." }
 ];
 
-export function quitStartIso(course: CourseRow): string {
-  const dayOne = localDateKey(new Date(course.start_date));
+export function quitStartIso(course: CourseRow, timeZone = APP_TIME_ZONE): string {
+  const dayOne = localDateKey(new Date(course.start_date), timeZone);
   const dayFive = addDaysToDateKey(dayOne, 4);
-  return localDateTimeToUtcIso(dayFive, "00:00");
+  return localDateTimeToUtcIso(dayFive, "00:00", timeZone);
 }
 
-export function lastRelapseAfterQuit(course: CourseRow, smokes: SmokeLogRow[]): SmokeLogRow | undefined {
-  const quitStart = quitStartIso(course);
+export function lastRelapseAfterQuit(course: CourseRow, smokes: SmokeLogRow[], timeZone = APP_TIME_ZONE): SmokeLogRow | undefined {
+  const quitStart = quitStartIso(course, timeZone);
   return [...smokes]
     .filter((smoke) => smoke.kind === "relapse" && smoke.logged_at >= quitStart)
     .sort((a, b) => b.logged_at.localeCompare(a.logged_at))[0];
 }
 
-export function postQuitStartedAt(course: CourseRow, smokes: SmokeLogRow[]): string {
-  return lastRelapseAfterQuit(course, smokes)?.logged_at ?? quitStartIso(course);
+export function postQuitStartedAt(course: CourseRow, smokes: SmokeLogRow[], timeZone = APP_TIME_ZONE): string {
+  return lastRelapseAfterQuit(course, smokes, timeZone)?.logged_at ?? quitStartIso(course, timeZone);
 }
 
 export function calculateBenefits(
   course: CourseRow | undefined,
   smokes: SmokeLogRow[],
   settings: SettingsRow,
-  now = new Date()
+  now = new Date(),
+  timeZone = APP_TIME_ZONE
 ): BenefitsResult {
   if (!course) {
     return emptyBenefits();
   }
 
-  const startedAt = postQuitStartedAt(course, smokes);
+  const startedAt = postQuitStartedAt(course, smokes, timeZone);
   const elapsedMs = Math.max(0, now.getTime() - new Date(startedAt).getTime());
   const smokeFreeHours = Math.floor(elapsedMs / 3_600_000);
   const smokeFreeDays = Math.floor(elapsedMs / 86_400_000);

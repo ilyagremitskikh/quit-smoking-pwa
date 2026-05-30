@@ -1,5 +1,6 @@
 import type { CourseRow, SmokeLogRow } from "../types/domain.js";
 import { postQuitStartedAt, quitStartIso } from "./benefits.js";
+import { APP_TIME_ZONE } from "./time.js";
 
 export interface StreakResult {
   currentStartedAt: string | null;
@@ -9,12 +10,17 @@ export interface StreakResult {
   recordHours: number;
 }
 
-export function calculateStreak(course: CourseRow | undefined, smokes: SmokeLogRow[], now = new Date()): StreakResult {
-  const start = course ? quitStartIso(course) : now.toISOString();
+export function calculateStreak(
+  course: CourseRow | undefined,
+  smokes: SmokeLogRow[],
+  now = new Date(),
+  timeZone = APP_TIME_ZONE
+): StreakResult {
+  const start = course ? quitStartIso(course, timeZone) : now.toISOString();
   const sorted = [...smokes]
     .filter((smoke) => smoke.kind === "relapse" && smoke.logged_at >= start)
     .sort((a, b) => a.logged_at.localeCompare(b.logged_at));
-  const currentStartedAt = course ? postQuitStartedAt(course, sorted) : start;
+  const currentStartedAt = course ? postQuitStartedAt(course, sorted, timeZone) : start;
   const currentMs = Math.max(0, now.getTime() - new Date(currentStartedAt).getTime());
 
   const anchors = [start, ...sorted.map((smoke) => smoke.logged_at), now.toISOString()];

@@ -4,8 +4,8 @@
 
 :root {
   color-scheme: light;
-  background: #fffaf0;
-  color: #172033;
+  background: #eef6f1;
+  color: #10271f;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -19,9 +19,8 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    linear-gradient(135deg, rgba(32, 201, 151, 0.16) 0%, transparent 34%),
-    linear-gradient(225deg, rgba(56, 189, 248, 0.16) 0%, transparent 32%),
-    #fffaf0;
+    radial-gradient(circle at 15% 6%, rgba(255, 255, 255, 0.9) 0, transparent 28%),
+    linear-gradient(180deg, #eef6f1 0%, #e9f3ed 52%, #f8fbf8 100%);
 }
 
 button,
@@ -49,6 +48,38 @@ button {
     box-shadow 160ms ease,
     background-color 160ms ease,
     border-color 160ms ease;
+}
+
+.label-soft {
+  color: #7c8d86;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.shadow-soft {
+  box-shadow:
+    0 18px 42px rgba(22, 48, 38, 0.1),
+    0 2px 8px rgba(22, 48, 38, 0.06);
+}
+
+.shadow-hero {
+  box-shadow:
+    0 24px 50px rgba(24, 126, 100, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.shadow-green {
+  box-shadow: 0 16px 32px rgba(24, 166, 111, 0.26);
+}
+
+.shadow-inner-soft {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.hold-active {
+  transform: scale(0.99);
 }
 
 .tap-button:active {

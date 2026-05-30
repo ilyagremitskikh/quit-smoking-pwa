@@ -15,14 +15,22 @@ import type {
 import { BenefitsResult, calculateBenefits, quitStartIso } from "../services/benefits.js";
 import { computeDoseViews, statusForTaking } from "../services/dose-status.js";
 import { generateSchedule, insertSchedule } from "../services/schedule-generator.js";
-import { addDaysToDateKey, addMinutesIso, dayNumberForCourse, isoFromDate, localDateKey, localDateTimeToUtcIso } from "../services/time.js";
+import {
+  APP_TIME_ZONE,
+  addDaysToDateKey,
+  addMinutesIso,
+  dayNumberForCourse,
+  isoFromDate,
+  localDateKey,
+  localDateTimeToUtcIso
+} from "../services/time.js";
 import { quoteIndexForDate } from "../services/quotes.js";
 import { calculateStreak } from "../services/streak-calc.js";
 
 export interface AppState {
   setupNeeded: boolean;
   course: CourseRow | null;
-  mode: "setup" | "course" | "afterCourse";
+  mode: "setup" | "beforeCourse" | "course" | "afterCourse";
   currentDay: number | null;
   currentPhase: number | null;
   todaySchedule: DoseView[];
@@ -48,6 +56,20 @@ export interface SmokeEventView extends SmokeLogRow {
   dayNumber: number | null;
 }
 
+export interface ProgressAdherence {
+  percent: number;
+  elapsedPlanned: number;
+  taken: number;
+  late: number;
+  skipped: number;
+}
+
+export interface MissedDay {
+  dayNumber: number;
+  dateKey: string;
+  openSlots: number;
+}
+
 export class Repository {
   constructor(private readonly db: Database.Database) {}
 
@@ -55,13 +77,13 @@ export class Repository {
     return this.db;
   }
 
-  getState(now = new Date()): AppState {
+  getState(now = new Date(), timeZone = APP_TIME_ZONE): AppState {
     const course = this.getCurrentCourse();
     const settings = this.getSettings();
     const quote = this.getQuoteToday(now);
     const smokes = this.getSmokeLogs();
-    const streak = calculateStreak(course ?? undefined, smokes, now);
-    const benefits = calculateBenefits(course ?? undefined, smokes, settings, now);
+    const streak = calculateStreak(course ?? undefined, smokes, now, timeZone);
+    const benefits = calculateBenefits(course ?? undefined, smokes, settings, now, timeZone);
 
     if (!course) {
       return {
@@ -79,7 +101,24 @@ export class Repository {
       };
     }
 
-    const dayNumber = dayNumberForCourse(course.start_date, now);
+    const dayNumber = dayNumberForCourse(course.start_date, now, timeZone);
+    if (course.status === "active" && dayNumber < 1) {
+      const firstRows = this.getScheduleRows(course.id, 1);
+      const firstSchedule = this.getDoseViews(firstRows, now);
+      return {
+        setupNeeded: false,
+        course,
+        mode: "beforeCourse",
+        currentDay: 0,
+        currentPhase: null,
+        todaySchedule: [],
+        nextDose: firstSchedule[0] ?? null,
+        streak,
+        benefits,
+        quote,
+        settings
+      };
+    }
     if (course.status === "active" && dayNumber > 25) {
       this.db.prepare("UPDATE course SET status = 'done' WHERE id = ?").run(course.id);
       course.status = "done";
@@ -90,7 +129,7 @@ export class Repository {
       ? this.getScheduleRows(course.id, scheduleDay)
       : [];
     const todaySchedule = this.getDoseViews(todayRows, now);
-    const nextDose = todaySchedule.find((dose) => !dose.takenAt) ?? null;
+    const nextDose = todaySchedule.find((dose) => dose.status === "pending" || (dose.status === "late" && !dose.takenAt)) ?? null;
 
     return {
       setupNeeded: false,
@@ -107,14 +146,14 @@ export class Repository {
     };
   }
 
-  createCourse(startDate: string, firstDoseTime: string): CourseRow {
+  createCourse(startDate: string, firstDoseTime: string, timeZone = APP_TIME_ZONE): CourseRow {
     const create = this.db.transaction(() => {
       this.db.prepare("UPDATE course SET status = 'aborted' WHERE status = 'active'").run();
       const result = this.db
         .prepare("INSERT INTO course (start_date, first_dose_time, status) VALUES (?, ?, 'active')")
         .run(startDate, firstDoseTime);
       const courseId = Number(result.lastInsertRowid);
-      insertSchedule(this.db, generateSchedule(courseId, startDate, firstDoseTime));
+      insertSchedule(this.db, generateSchedule(courseId, startDate, firstDoseTime, timeZone));
       return this.getCourseById(courseId);
     });
 
@@ -133,7 +172,7 @@ export class Repository {
     return this.getDoseViews(this.getScheduleRows(course.id, dayNumber), now);
   }
 
-  takeDose(scheduleId: number, now = new Date()): DoseView {
+  takeDose(scheduleId: number, now = new Date(), takenAt = now): DoseView {
     const row = this.db
       .prepare("SELECT * FROM dose_schedule WHERE id = ?")
       .get(scheduleId) as DoseScheduleRow | undefined;
@@ -143,8 +182,8 @@ export class Repository {
 
     const dayRows = this.getScheduleRows(row.course_id, row.day_number);
     const currentView = this.getDoseViews(dayRows, now).find((dose) => dose.id === scheduleId);
-    const status = statusForTaking(currentView?.effectiveTime ?? row.planned_time, now);
-    const takenAt = isoFromDate(now);
+    const status = statusForTaking(currentView?.effectiveTime ?? row.planned_time, takenAt);
+    const takenAtIso = isoFromDate(takenAt);
     this.db
       .prepare(`
         INSERT INTO dose_log (schedule_id, taken_at, status)
@@ -153,7 +192,7 @@ export class Repository {
           taken_at = excluded.taken_at,
           status = excluded.status
       `)
-      .run(scheduleId, takenAt, status);
+      .run(scheduleId, takenAtIso, status);
 
     return this.getDoseViews(dayRows, now).find((dose) => dose.id === scheduleId)!;
   }
@@ -162,8 +201,20 @@ export class Repository {
     this.db.prepare("DELETE FROM dose_log WHERE schedule_id = ?").run(scheduleId);
   }
 
-  logSmoke(note?: string, now = new Date()): { smoke: SmokeLogRow; shouldOfferVideo: boolean } {
-    const kind = this.smokeKindForNow(now);
+  skipDose(scheduleId: number): void {
+    this.db
+      .prepare(`
+        INSERT INTO dose_log (schedule_id, taken_at, status)
+        VALUES (?, NULL, 'skipped')
+        ON CONFLICT(schedule_id) DO UPDATE SET
+          taken_at = NULL,
+          status = 'skipped'
+      `)
+      .run(scheduleId);
+  }
+
+  logSmoke(note?: string, now = new Date(), timeZone = APP_TIME_ZONE): { smoke: SmokeLogRow; shouldOfferVideo: boolean } {
+    const kind = this.smokeKindForNow(now, timeZone);
     const result = this.db
       .prepare("INSERT INTO smoke_log (logged_at, note, kind) VALUES (?, ?, ?)")
       .run(isoFromDate(now), note?.trim() || null, kind);
@@ -177,11 +228,18 @@ export class Repository {
     return this.db.prepare("SELECT * FROM smoke_log ORDER BY logged_at DESC").all() as SmokeLogRow[];
   }
 
-  getProgress(now = new Date()): {
+  deleteSmoke(smokeId: number): void {
+    this.db.prepare("DELETE FROM smoke_log WHERE id = ?").run(smokeId);
+  }
+
+  getProgress(now = new Date(), timeZone = APP_TIME_ZONE): {
     days: ProgressDay[];
     smokes: SmokeLogRow[];
     smokeEvents: SmokeEventView[];
     benefits: BenefitsResult;
+    streak: ReturnType<typeof calculateStreak>;
+    adherence: ProgressAdherence;
+    missedDays: MissedDay[];
     milestones: Array<{ day: number; label: string }>;
   } {
     const course = this.getCurrentCourse();
@@ -192,12 +250,16 @@ export class Repository {
         days: [],
         smokes,
         smokeEvents: smokes.map((smoke) => ({ ...smoke, dayNumber: null })),
-        benefits: calculateBenefits(undefined, smokes, settings, now),
+        benefits: calculateBenefits(undefined, smokes, settings, now, timeZone),
+        streak: calculateStreak(undefined, smokes, now, timeZone),
+        adherence: { percent: 0, elapsedPlanned: 0, taken: 0, late: 0, skipped: 0 },
+        missedDays: [],
         milestones: []
       };
     }
 
     const rows = this.getScheduleRows(course.id);
+    const loggedScheduleIds = new Set(this.getDoseLogs(rows).map((log) => log.schedule_id));
     const views = this.getDoseViews(rows, now);
     const days: ProgressDay[] = [];
 
@@ -227,14 +289,42 @@ export class Repository {
       smokes,
       smokeEvents: smokes.map((smoke) => ({
         ...smoke,
-        dayNumber: this.courseDayForIso(course, smoke.logged_at)
+        dayNumber: this.courseDayForIso(course, smoke.logged_at, timeZone)
       })),
-      benefits: calculateBenefits(course, smokes, settings, now),
+      benefits: calculateBenefits(course, smokes, settings, now, timeZone),
+      streak: calculateStreak(course, smokes, now, timeZone),
+      adherence: this.calculateAdherence(views, now),
+      missedDays: this.getMissedDays(course, views, loggedScheduleIds, now, timeZone),
       milestones: [
         { day: 5, label: "Полный отказ" },
         { day: 25, label: "Финиш курса" }
       ]
     };
+  }
+
+  closeDay(dayNumber: number, now = new Date()): { closed: number } {
+    const course = this.getCurrentCourse();
+    if (!course) {
+      return { closed: 0 };
+    }
+
+    const rows = this.getScheduleRows(course.id, dayNumber);
+    const loggedScheduleIds = new Set(this.getDoseLogs(rows).map((log) => log.schedule_id));
+    const views = this.getDoseViews(rows, now);
+    const elapsedOpen = views.filter((dose) => {
+      if (loggedScheduleIds.has(dose.id)) {
+        return false;
+      }
+      return new Date(dose.effectiveTime).getTime() <= now.getTime() || dose.status === "late";
+    });
+
+    const close = this.db.transaction(() => {
+      for (const dose of elapsedOpen) {
+        this.skipDose(dose.id);
+      }
+    });
+    close();
+    return { closed: elapsedOpen.length };
   }
 
   updateSettings(input: { packPrice?: number | null; remindersEnabled?: boolean; cigarettesPerDay?: number }): SettingsRow {
@@ -343,13 +433,13 @@ export class Repository {
     }
   }
 
-  createDemoScenario(scenario: DemoScenarioId): { demoNow: string; state: AppState } {
+  createDemoScenario(scenario: DemoScenarioId, timeZone = APP_TIME_ZONE): { demoNow: string; state: AppState } {
     const config = DEMO_SCENARIOS[scenario] ?? DEMO_SCENARIOS.day5;
     const firstDoseTime = "08:00";
-    const demoDateKey = localDateKey(new Date());
+    const demoDateKey = localDateKey(new Date(), timeZone);
     const startDateKey = addDaysToDateKey(demoDateKey, -(config.dayNumber - 1));
-    const startDate = localDateTimeToUtcIso(startDateKey, firstDoseTime);
-    const demoNow = new Date(localDateTimeToUtcIso(demoDateKey, config.localTime));
+    const startDate = localDateTimeToUtcIso(startDateKey, firstDoseTime, timeZone);
+    const demoNow = new Date(localDateTimeToUtcIso(demoDateKey, config.localTime, timeZone));
 
     const create = this.db.transaction(() => {
       this.db.prepare("DELETE FROM smoke_log").run();
@@ -358,12 +448,12 @@ export class Repository {
         .prepare("INSERT INTO course (start_date, first_dose_time, status) VALUES (?, ?, 'active')")
         .run(startDate, firstDoseTime);
       const courseId = Number(result.lastInsertRowid);
-      insertSchedule(this.db, generateSchedule(courseId, startDate, firstDoseTime));
-      this.seedDemoLogs(courseId, config.dayNumber, demoNow);
+      insertSchedule(this.db, generateSchedule(courseId, startDate, firstDoseTime, timeZone));
+      this.seedDemoLogs(courseId, config.dayNumber, demoNow, timeZone);
     });
 
     create();
-    return { demoNow: demoNow.toISOString(), state: this.getState(demoNow) };
+    return { demoNow: demoNow.toISOString(), state: this.getState(demoNow, timeZone) };
   }
 
   private getCurrentCourse(): CourseRow | undefined {
@@ -393,15 +483,18 @@ export class Repository {
   }
 
   private getDoseViews(rows: DoseScheduleRow[], now = new Date()): DoseView[] {
+    return computeDoseViews(rows, this.getDoseLogs(rows), now);
+  }
+
+  private getDoseLogs(rows: DoseScheduleRow[]): DoseLogRow[] {
     if (rows.length === 0) {
       return [];
     }
     const ids = rows.map((row) => row.id);
     const placeholders = ids.map(() => "?").join(",");
-    const logs = this.db
+    return this.db
       .prepare(`SELECT * FROM dose_log WHERE schedule_id IN (${placeholders})`)
       .all(...ids) as DoseLogRow[];
-    return computeDoseViews(rows, logs, now);
   }
 
   private getSettings(): SettingsRow {
@@ -416,7 +509,49 @@ export class Repository {
     return quotes[quoteIndexForDate(now, quotes.length)] ?? quotes[0]!;
   }
 
-  private seedDemoLogs(courseId: number, scenarioDay: number, demoNow: Date): void {
+  private calculateAdherence(views: DoseView[], now: Date): ProgressAdherence {
+    const elapsed = views.filter((dose) => {
+      const isTaken = dose.status === "taken" || (dose.status === "late" && dose.takenAt);
+      return isTaken || dose.status === "skipped" || new Date(dose.effectiveTime).getTime() <= now.getTime();
+    });
+    const taken = elapsed.filter((dose) => dose.status === "taken" || (dose.status === "late" && dose.takenAt)).length;
+    const late = elapsed.filter((dose) => dose.status === "late" && dose.takenAt).length;
+    const skipped = elapsed.filter((dose) => dose.status === "skipped").length;
+    return {
+      percent: elapsed.length > 0 ? Math.round((taken / elapsed.length) * 100) : 0,
+      elapsedPlanned: elapsed.length,
+      taken,
+      late,
+      skipped
+    };
+  }
+
+  private getMissedDays(
+    course: CourseRow,
+    views: DoseView[],
+    loggedScheduleIds: Set<number>,
+    now: Date,
+    timeZone: string
+  ): MissedDay[] {
+    const currentDay = dayNumberForCourse(course.start_date, now, timeZone);
+    const days: MissedDay[] = [];
+    for (let dayNumber = 1; dayNumber <= Math.min(currentDay, 25); dayNumber += 1) {
+      const dayDoses = views.filter((dose) => dose.dayNumber === dayNumber);
+      const openSlots = dayDoses.filter((dose) => {
+        if (loggedScheduleIds.has(dose.id)) {
+          return false;
+        }
+        return new Date(dose.effectiveTime).getTime() <= now.getTime() || dose.status === "late";
+      }).length;
+      if (openSlots > 0 && dayNumber < currentDay) {
+        const dateKey = addDaysToDateKey(localDateKey(new Date(course.start_date), timeZone), dayNumber - 1);
+        days.push({ dayNumber, dateKey, openSlots });
+      }
+    }
+    return days;
+  }
+
+  private seedDemoLogs(courseId: number, scenarioDay: number, demoNow: Date, timeZone: string): void {
     const rows = this.getScheduleRows(courseId).filter((row) => new Date(row.planned_time) < demoNow);
     const insertDose = this.db.prepare(`
       INSERT INTO dose_log (schedule_id, taken_at, status)
@@ -438,30 +573,38 @@ export class Repository {
     const smokeInsert = this.db.prepare("INSERT INTO smoke_log (logged_at, note, kind) VALUES (?, ?, ?)");
     if (scenarioDay >= 5) {
       smokeInsert.run(
-        localDateTimeToUtcIso(addDaysToDateKey(localDateKey(new Date(this.getCurrentCourse()!.start_date)), 2), "21:10"),
+        localDateTimeToUtcIso(
+          addDaysToDateKey(localDateKey(new Date(this.getCurrentCourse()!.start_date), timeZone), 2),
+          "21:10",
+          timeZone
+        ),
         "Демо: курение в переходный период",
         "transition"
       );
     }
     if (scenarioDay >= 18) {
       smokeInsert.run(
-        localDateTimeToUtcIso(addDaysToDateKey(localDateKey(new Date(this.getCurrentCourse()!.start_date)), 11), "18:40"),
+        localDateTimeToUtcIso(
+          addDaysToDateKey(localDateKey(new Date(this.getCurrentCourse()!.start_date), timeZone), 11),
+          "18:40",
+          timeZone
+        ),
         "Демо: срыв после целевого отказа",
         "relapse"
       );
     }
   }
 
-  private smokeKindForNow(now: Date): SmokeKind {
+  private smokeKindForNow(now: Date, timeZone = APP_TIME_ZONE): SmokeKind {
     const course = this.getCurrentCourse();
     if (!course) {
       return "relapse";
     }
-    return now.getTime() < new Date(quitStartIso(course)).getTime() ? "transition" : "relapse";
+    return now.getTime() < new Date(quitStartIso(course, timeZone)).getTime() ? "transition" : "relapse";
   }
 
-  private courseDayForIso(course: CourseRow, iso: string): number | null {
-    const dayNumber = dayNumberForCourse(course.start_date, new Date(iso));
+  private courseDayForIso(course: CourseRow, iso: string, timeZone: string): number | null {
+    const dayNumber = dayNumberForCourse(course.start_date, new Date(iso), timeZone);
     return dayNumber >= 1 ? dayNumber : null;
   }
 }

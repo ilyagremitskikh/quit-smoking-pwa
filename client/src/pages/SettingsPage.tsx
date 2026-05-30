@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Bell, FlaskConical, RotateCcw, Save, Send } from "lucide-react";
 import { SetupForm } from "../components/SetupForm.js";
-import { api, clearDemoNow, getDemoNow, setDemoNow } from "../lib/api.js";
+import { api, clearDemoNow, demoEnabled, getDemoNow, setDemoNow } from "../lib/api.js";
 import { disablePushReminders, enablePushReminders, getPushUiState, sendTestPush, type PushUiState } from "../lib/push.js";
 import { formatDateTimeLocalValue } from "../lib/time.js";
 import type { AppState, DemoScenarioId } from "../lib/types.js";
@@ -214,7 +214,7 @@ export function SettingsPage() {
       <div className="space-y-4">
         {message ? <p className="rounded-md border border-line bg-panel p-3 text-sm text-slate-600 shadow-sm">{message}</p> : null}
         {pushPanel}
-        {demoPanel}
+        {demoEnabled ? demoPanel : null}
         <SetupForm onStarted={load} />
       </div>
     );
@@ -261,7 +261,7 @@ export function SettingsPage() {
 
       {pushPanel}
 
-      {demoPanel}
+      {demoEnabled ? demoPanel : null}
 
       <section className="surface-in space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
         <h2 className="text-lg font-semibold">Перезапуск курса</h2>

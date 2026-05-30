@@ -53,7 +53,7 @@ export interface Benefits {
 export interface AppState {
   setupNeeded: boolean;
   course: Course | null;
-  mode: "setup" | "course" | "afterCourse";
+  mode: "setup" | "beforeCourse" | "course" | "afterCourse";
   currentDay: number | null;
   currentPhase: number | null;
   todaySchedule: DoseView[];
@@ -68,6 +68,14 @@ export interface AppState {
   benefits: Benefits;
   quote: Quote | null;
   settings: Settings;
+}
+
+export interface ProgressAdherence {
+  percent: number;
+  elapsedPlanned: number;
+  taken: number;
+  late: number;
+  skipped: number;
 }
 
 export interface ProgressDay {
@@ -93,6 +101,9 @@ export interface ProgressResponse {
   smokes: SmokeLog[];
   smokeEvents: Array<SmokeLog & { dayNumber: number | null }>;
   benefits: Benefits;
+  streak: AppState["streak"];
+  adherence: ProgressAdherence;
+  missedDays: Array<{ dayNumber: number; dateKey: string; openSlots: number }>;
   milestones: Array<{ day: number; label: string }>;
 }
 

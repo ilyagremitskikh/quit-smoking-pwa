@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Repository } from "../db/repository.js";
 import type { DemoScenarioId } from "../db/repository.js";
 import { sendTestPush, WebPushSender } from "../services/push-service.js";
+import { resolveTimeZone } from "../services/time.js";
 
 const courseSchema = z.object({
   startDate: z.string().datetime(),
@@ -19,6 +20,14 @@ const demoScenarioSchema = z.object({
   scenario: z.enum(["day1", "day5", "day13", "day21", "day25", "after"])
 });
 
+const takeDoseSchema = z.object({
+  takenAt: z.string().datetime().optional()
+}).optional();
+
+const closeDaySchema = z.object({
+  mode: z.literal("skipped")
+});
+
 const pushSubscriptionSchema = z.object({
   endpoint: z.string().url(),
   keys: z.object({
@@ -30,11 +39,11 @@ const pushSubscriptionSchema = z.object({
 export async function registerApiRoutes(app: FastifyInstance, repo: Repository) {
   app.get("/api/health", async () => ({ ok: true }));
 
-  app.get("/api/state", async (request) => repo.getState(readDemoNow(request.headers)));
+  app.get("/api/state", async (request) => repo.getState(readDemoNow(request.headers), readTimeZone(request.headers)));
 
   app.post("/api/course", async (request, reply) => {
     const body = courseSchema.parse(request.body);
-    const course = repo.createCourse(body.startDate, body.firstDoseTime);
+    const course = repo.createCourse(body.startDate, body.firstDoseTime, readTimeZone(request.headers));
     return reply.code(201).send(course);
   });
 
@@ -50,7 +59,10 @@ export async function registerApiRoutes(app: FastifyInstance, repo: Repository) 
 
   app.post("/api/doses/:scheduleId/take", async (request) => {
     const params = z.object({ scheduleId: z.coerce.number().int().positive() }).parse(request.params);
-    return repo.takeDose(params.scheduleId, readDemoNow(request.headers));
+    const body = takeDoseSchema.parse(request.body);
+    const now = readDemoNow(request.headers);
+    const takenAt = body?.takenAt ? new Date(body.takenAt) : now;
+    return repo.takeDose(params.scheduleId, now, takenAt);
   });
 
   app.delete("/api/doses/:scheduleId/take", async (request) => {
@@ -61,12 +73,24 @@ export async function registerApiRoutes(app: FastifyInstance, repo: Repository) 
 
   app.post("/api/smoke", async (request, reply) => {
     const body = z.object({ note: z.string().optional() }).optional().parse(request.body);
-    return reply.code(201).send(repo.logSmoke(body?.note, readDemoNow(request.headers)));
+    return reply.code(201).send(repo.logSmoke(body?.note, readDemoNow(request.headers), readTimeZone(request.headers)));
+  });
+
+  app.delete("/api/smoke/:smokeId", async (request) => {
+    const params = z.object({ smokeId: z.coerce.number().int().positive() }).parse(request.params);
+    repo.deleteSmoke(params.smokeId);
+    return { ok: true };
   });
 
   app.get("/api/smoke", async () => repo.getSmokeLogs());
 
-  app.get("/api/progress", async (request) => repo.getProgress(readDemoNow(request.headers)));
+  app.get("/api/progress", async (request) => repo.getProgress(readDemoNow(request.headers), readTimeZone(request.headers)));
+
+  app.post("/api/days/:dayNumber/close", async (request) => {
+    const params = z.object({ dayNumber: z.coerce.number().int().min(1).max(25) }).parse(request.params);
+    closeDaySchema.parse(request.body);
+    return repo.closeDay(params.dayNumber, readDemoNow(request.headers));
+  });
 
   app.put("/api/settings", async (request) => {
     const body = settingsSchema.parse(request.body);
@@ -98,12 +122,18 @@ export async function registerApiRoutes(app: FastifyInstance, repo: Repository) 
   });
 
   app.post("/api/demo/scenario", async (request, reply) => {
+    if (!demoEnabled()) {
+      return reply.code(404).send({ error: "Not found" });
+    }
     const body = demoScenarioSchema.parse(request.body);
-    return reply.code(201).send(repo.createDemoScenario(body.scenario as DemoScenarioId));
+    return reply.code(201).send(repo.createDemoScenario(body.scenario as DemoScenarioId, readTimeZone(request.headers)));
   });
 }
 
 function readDemoNow(headers: Record<string, string | string[] | undefined>): Date {
+  if (!demoEnabled() && process.env.NODE_ENV !== "test") {
+    return new Date();
+  }
   const value = headers["x-quitkit-demo-now"];
   const raw = Array.isArray(value) ? value[0] : value;
   if (!raw) {
@@ -111,4 +141,14 @@ function readDemoNow(headers: Record<string, string | string[] | undefined>): Da
   }
   const parsed = new Date(raw);
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+function readTimeZone(headers: Record<string, string | string[] | undefined>): string {
+  const value = headers["x-quitkit-time-zone"];
+  const raw = Array.isArray(value) ? value[0] : value;
+  return resolveTimeZone(raw);
+}
+
+function demoEnabled(): boolean {
+  return process.env.ENABLE_DEMO === "1" || process.env.ENABLE_DEMO === "true";
 }

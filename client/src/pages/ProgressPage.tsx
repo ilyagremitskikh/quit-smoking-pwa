@@ -34,17 +34,14 @@ export function ProgressPage() {
     return <p className="rounded-md border border-line bg-panel p-4 text-slate-600 shadow-sm">Загружаю прогресс...</p>;
   }
 
-  const taken = progress.days.reduce((sum, day) => sum + day.taken, 0);
-  const planned = progress.days.reduce((sum, day) => sum + day.planned, 0);
-  const adherence = planned > 0 ? Math.round((taken / planned) * 100) : 0;
   const relapses = progress.smokeEvents.filter((smoke) => smoke.kind === "relapse").length;
   const transitions = progress.smokeEvents.filter((smoke) => smoke.kind === "transition").length;
-
   return (
     <div className="space-y-4">
       <section className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
-        <Stat label="Адхеренс" value={`${adherence}%`} />
+        <Stat label="Адхеренс" value={`${progress.adherence.percent}%`} />
         <Stat label="После отказа" value={`${progress.benefits.smokeFreeDays} д.`} />
+        <Stat label="Рекорд" value={`${progress.streak.recordDays} д.`} />
         <Stat label="Не выкурено" value={String(progress.benefits.cigarettesAvoided)} />
         <Stat label="Сэкономлено" value={progress.benefits.moneySaved === null ? "—" : `${progress.benefits.moneySaved} ₽`} />
       </section>
@@ -153,9 +150,9 @@ export function ProgressPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="surface-in min-w-0 rounded-md border border-line bg-panel p-4 shadow-sm">
-      <p className="text-sm text-slate-600">{label}</p>
-      <p className="mt-1 min-w-0 break-words text-2xl font-semibold">{value}</p>
+    <div className="surface-in min-w-0 rounded-[22px] bg-panel p-4 shadow-soft">
+      <p className="label-soft">{label}</p>
+      <p className="mt-2 min-w-0 break-words text-3xl font-black">{value}</p>
     </div>
   );
 }

@@ -4,14 +4,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#172033",
-        paper: "#fffaf0",
+        ink: "#10271f",
+        paper: "#eef6f1",
         panel: "#ffffff",
-        line: "#e7dfd2",
-        mint: "#20c997",
+        line: "#dfe8e2",
+        mint: "#18a66f",
         sky: "#38bdf8",
-        amber: "#f59e0b",
-        coral: "#f43f5e"
+        amber: "#d9941c",
+        coral: "#ef5a5f"
       }
     }
   },

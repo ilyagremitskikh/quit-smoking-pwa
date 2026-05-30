@@ -42,7 +42,7 @@ export async function buildApp(repo: Repository, options: BuildAppOptions = {}) 
     await app.register(fastifyStatic, {
       root: options.clientDist,
       prefix: "/",
-      decorateReply: false,
+      decorateReply: true,
       wildcard: false
     });
 

@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { addDaysToDateKey, addMinutesIso, localDateKey, localDateTimeToUtcIso } from "./time.js";
+import { APP_TIME_ZONE, addDaysToDateKey, addMinutesIso, localDateKey, localDateTimeToUtcIso } from "./time.js";
 
 export const PHASES = [
   { phase: 1, fromDay: 1, toDay: 3, intervalMin: 120, dosesPerDay: 6, flexible: false },
@@ -18,14 +18,19 @@ export interface GeneratedDose {
   flexible: boolean;
 }
 
-export function generateSchedule(courseId: number, startDateIso: string, firstDoseTime: string): GeneratedDose[] {
-  const startDay = localDateKey(new Date(startDateIso));
+export function generateSchedule(
+  courseId: number,
+  startDateIso: string,
+  firstDoseTime: string,
+  timeZone = APP_TIME_ZONE
+): GeneratedDose[] {
+  const startDay = localDateKey(new Date(startDateIso), timeZone);
   const doses: GeneratedDose[] = [];
 
   for (let dayNumber = 1; dayNumber <= 25; dayNumber += 1) {
     const phase = phaseForDay(dayNumber);
     const dateKey = addDaysToDateKey(startDay, dayNumber - 1);
-    const firstDoseIso = localDateTimeToUtcIso(dateKey, firstDoseTime);
+    const firstDoseIso = localDateTimeToUtcIso(dateKey, firstDoseTime, timeZone);
 
     for (let slot = 0; slot < phase.dosesPerDay; slot += 1) {
       doses.push({

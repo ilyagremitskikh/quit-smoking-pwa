@@ -25,8 +25,8 @@ export interface DoseScheduleRow {
 export interface DoseLogRow {
   id: number;
   schedule_id: number;
-  taken_at: string;
-  status: "taken" | "late";
+  taken_at: string | null;
+  status: "taken" | "late" | "skipped";
 }
 
 export interface SmokeLogRow {
