@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Bell, FlaskConical, RotateCcw, Save, Send } from "lucide-react";
 import { SetupForm } from "../components/SetupForm.js";
+import { TimeField } from "../components/TimePicker.js";
 import { api, clearDemoNow, demoEnabled, getDemoNow, setDemoNow } from "../lib/api.js";
 import { disablePushReminders, enablePushReminders, getPushUiState, sendTestPush, type PushUiState } from "../lib/push.js";
 import { formatDateTimeLocalValue } from "../lib/time.js";
@@ -265,15 +266,7 @@ export function SettingsPage() {
 
       <section className="surface-in space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
         <h2 className="heading-soft text-ink">Перезапуск курса</h2>
-        <label className="block space-y-2">
-          <span className="label-soft block">Первая таблетка дня</span>
-          <input
-            type="time"
-            value={restartTime}
-            onChange={(event) => setRestartTime(event.target.value)}
-            className="w-full rounded-md border border-line bg-white px-3 py-3 text-base outline-none focus:border-mint"
-          />
-        </label>
+        <TimeField label="Первая таблетка дня" value={restartTime} onChange={setRestartTime} caption="Время первой таблетки в новом курсе" />
         <button
           onClick={handleRestart}
           className={[

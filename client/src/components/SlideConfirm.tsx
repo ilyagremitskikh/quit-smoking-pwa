@@ -58,16 +58,11 @@ export function SlideConfirm({
   const [rippleKey, setRippleKey] = useState(0);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const rangeRef = useRef<HTMLInputElement | null>(null);
-  const switchRef = useRef<HTMLInputElement | null>(null);
   const activeRef = useRef(false);
   const confirmedRef = useRef(false);
   const tickedRef = useRef(false);
   const valueRef = useRef(0);
   const resetTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    switchRef.current?.setAttribute("switch", "");
-  }, []);
 
   useEffect(() => {
     const track = trackRef.current;
@@ -134,7 +129,6 @@ export function SlideConfirm({
     setSliderValue(Number.isFinite(next) ? next : 0);
     if (next >= 90 && !tickedRef.current) {
       tickedRef.current = true;
-      triggerSwitch();
       hapticTick();
     }
   }
@@ -157,7 +151,6 @@ export function SlideConfirm({
     setSliderValue(100);
     setStatus("complete");
     setRippleKey((key) => key + 1);
-    triggerSwitch();
     hapticSuccess();
     void Promise.resolve(onConfirm()).finally(() => {
       resetTimerRef.current = window.setTimeout(() => reset(true), RESET_DELAY_MS);
@@ -177,15 +170,6 @@ export function SlideConfirm({
         resetTimerRef.current = null;
       }, 320);
     }
-  }
-
-  function triggerSwitch() {
-    const input = switchRef.current;
-    if (!input) {
-      return;
-    }
-    input.checked = !input.checked;
-    input.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
   const progress = value / 100;
@@ -252,7 +236,6 @@ export function SlideConfirm({
           onMouseUp={release}
           onBlur={release}
         />
-        <input ref={switchRef} type="checkbox" tabIndex={-1} aria-hidden="true" className="slide-confirm-switch" />
       </div>
       <p className="slide-confirm-hint">{hint}</p>
     </div>

@@ -3,10 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SetupForm } from "../components/SetupForm.js";
 import { SlideConfirm } from "../components/SlideConfirm.js";
 import { StatusBadge } from "../components/StatusBadge.js";
+import { TimePickerSheet } from "../components/TimePicker.js";
 import { VideoModal } from "../components/VideoModal.js";
 import { api, getDemoNow } from "../lib/api.js";
 import { hapticStrong } from "../lib/haptics.js";
-import { formatDateTimeLocalValue, formatTime, secondsToClock, secondsUntil } from "../lib/time.js";
+import { formatTime, secondsToClock, secondsUntil } from "../lib/time.js";
 import type { AppState, DoseView, ProgressResponse, SmokeLog } from "../lib/types.js";
 
 type UndoToast =
@@ -24,6 +25,7 @@ export function TodayPage() {
   const [showVideo, setShowVideo] = useState(false);
   const [showVideoOffer, setShowVideoOffer] = useState(false);
   const [justTaken, setJustTaken] = useState(false);
+  const [editingDose, setEditingDose] = useState<DoseView | null>(null);
   const notifiedDose = useRef<number | null>(null);
   const undoTimer = useRef<number | null>(null);
 
@@ -135,23 +137,7 @@ export function TodayPage() {
 
   async function handleDoseAction(dose: DoseView) {
     if (dose.status === "taken" || (dose.status === "late" && dose.takenAt)) {
-      const action = window.prompt("Введите новое время или оставьте пустым для отмены", formatDateTimeLocalValue(new Date(dose.takenAt ?? dose.effectiveTime)));
-      if (action === null) {
-        return;
-      }
-      setBusy(true);
-      try {
-        if (action.trim() === "") {
-          await api.undoDose(dose.id);
-          showUndo({ kind: "dose", scheduleId: dose.id, text: "Приём отменён" });
-        } else {
-          await api.takeDose(dose.id, { takenAt: new Date(action).toISOString() });
-          setNotice("Время приёма обновлено");
-        }
-        await load();
-      } finally {
-        setBusy(false);
-      }
+      setEditingDose(dose);
       return;
     }
     if (dose.status === "late") {
@@ -182,6 +168,36 @@ export function TodayPage() {
     if (undoTimer.current !== null) {
       window.clearTimeout(undoTimer.current);
       undoTimer.current = null;
+    }
+  }
+
+  async function saveDoseTime(time: string) {
+    if (!editingDose) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.takeDose(editingDose.id, { takenAt: combineDateWithTime(editingDose.takenAt ?? editingDose.effectiveTime, time).toISOString() });
+      setNotice("Время приёма обновлено");
+      setEditingDose(null);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function cancelDoseTake() {
+    if (!editingDose) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.undoDose(editingDose.id);
+      showUndo({ kind: "dose", scheduleId: editingDose.id, text: "Приём отменён" });
+      setEditingDose(null);
+      await load();
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -376,6 +392,17 @@ export function TodayPage() {
       ) : null}
 
       {showVideo ? <VideoModal onClose={() => setShowVideo(false)} /> : null}
+
+      <TimePickerSheet
+        open={Boolean(editingDose)}
+        title="Фактическое время"
+        value={editingDose ? formatTime(editingDose.takenAt ?? editingDose.effectiveTime) : "08:00"}
+        confirmLabel="Сохранить время"
+        destructiveLabel="Отменить приём"
+        onConfirm={saveDoseTime}
+        onClose={() => setEditingDose(null)}
+        onDestructive={cancelDoseTake}
+      />
     </div>
   );
 }
@@ -501,4 +528,11 @@ function EmptyState({ text, onRetry }: { text: string; onRetry: () => void }) {
 
 function smokeNotice(smoke: SmokeLog): string {
   return smoke.kind === "transition" ? "Записал факт курения" : "Записал срыв";
+}
+
+function combineDateWithTime(sourceIso: string, time: string): Date {
+  const next = new Date(sourceIso);
+  const [hours = "0", minutes = "0"] = time.split(":");
+  next.setHours(Number(hours) || 0, Number(minutes) || 0, 0, 0);
+  return next;
 }

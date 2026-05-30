@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Rocket } from "lucide-react";
+import { DateTimeField, TimeField } from "./TimePicker.js";
 import { api } from "../lib/api.js";
 import { formatDateTimeLocalValue } from "../lib/time.js";
 
@@ -38,27 +39,9 @@ export function SetupForm({ onStarted }: SetupFormProps) {
         <p className="copy-soft mt-1">Два поля, и дальше приложение само соберёт 25 дней.</p>
       </div>
 
-      <label className="block space-y-2">
-        <span className="label-soft block">Дата и время старта</span>
-        <input
-          type="datetime-local"
-          value={startDate}
-          onChange={(event) => setStartDate(event.target.value)}
-          className="w-full rounded-md border border-line bg-white px-3 py-3 text-base outline-none focus:border-mint"
-          required
-        />
-      </label>
+      <DateTimeField label="Дата и время старта" value={startDate} onChange={setStartDate} />
 
-      <label className="block space-y-2">
-        <span className="label-soft block">Первая таблетка дня</span>
-        <input
-          type="time"
-          value={firstDoseTime}
-          onChange={(event) => setFirstDoseTime(event.target.value)}
-          className="w-full rounded-md border border-line bg-white px-3 py-3 text-base outline-none focus:border-mint"
-          required
-        />
-      </label>
+      <TimeField label="Первая таблетка дня" value={firstDoseTime} onChange={setFirstDoseTime} />
 
       {error ? <p className="text-sm text-coral">{error}</p> : null}
 
