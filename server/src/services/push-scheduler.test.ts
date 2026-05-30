@@ -40,10 +40,40 @@ describe("push scheduler", () => {
     expect(due[0]?.kind).toBe("initial");
   });
 
-  it("selects retry after fifteen minutes", () => {
+  it("offers only the initial stage before it has been sent", () => {
     const due = findDueReminders(db, new Date("2026-05-29T03:16:00.000Z"));
 
-    expect(due.map((item) => item.kind).sort()).toEqual(["initial", "retry"]);
+    expect(due).toHaveLength(1);
+    expect(due[0]?.kind).toBe("initial");
+  });
+
+  it("never sends two reminders for one dose in a single tick", async () => {
+    const sender = new FakeSender();
+
+    const sent = await runPushReminderTick(repo, sender, new Date("2026-05-29T04:00:00.000Z"));
+
+    expect(sent).toBe(1);
+    expect(sender.sent).toHaveLength(1);
+  });
+
+  it("escalates one stage per tick and caps at three", async () => {
+    const sender = new FakeSender();
+
+    await runPushReminderTick(repo, sender, new Date("2026-05-29T03:01:00.000Z"));
+    await runPushReminderTick(repo, sender, new Date("2026-05-29T03:16:00.000Z"));
+    await runPushReminderTick(repo, sender, new Date("2026-05-29T03:31:00.000Z"));
+    await runPushReminderTick(repo, sender, new Date("2026-05-29T03:46:00.000Z"));
+
+    expect(sender.sent).toHaveLength(3);
+  });
+
+  it("builds reminder payload with copy and a badge count", async () => {
+    const sender = new FakeSender();
+
+    await runPushReminderTick(repo, sender, new Date("2026-05-29T03:01:00.000Z"));
+
+    expect(sender.sent[0]?.payload.title).toContain("Время дозы");
+    expect(sender.sent[0]?.payload.badgeCount).toBe(1);
   });
 
   it("does not send for taken doses", () => {
