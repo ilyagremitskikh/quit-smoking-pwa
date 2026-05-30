@@ -129,9 +129,9 @@ export function SettingsPage() {
       <div>
         <div className="mb-1 flex items-center gap-2">
           <FlaskConical className="text-amber" size={20} />
-          <h2 className="text-lg font-semibold">Демо-режим</h2>
+          <h2 className="heading-soft text-ink">Демо-режим</h2>
         </div>
-        <p className="text-sm text-slate-600">
+        <p className="copy-soft">
           Сценарий перезаписывает локальные данные курса, доз и срывов, затем включает виртуальное время.
         </p>
       </div>
@@ -143,7 +143,7 @@ export function SettingsPage() {
             onClick={() => void handleDemoScenario(scenario.id)}
             className="tap-button min-h-20 min-w-0 rounded-md border border-line bg-paper p-3 text-left hover:border-amber/60"
           >
-            <span className="block min-w-0 break-words font-medium text-ink">{scenario.label}</span>
+            <span className="block min-w-0 break-words font-bold text-ink">{scenario.label}</span>
             <span className="mt-1 block min-w-0 break-words text-xs leading-snug text-slate-600">{scenario.caption}</span>
           </button>
         ))}
@@ -165,9 +165,9 @@ export function SettingsPage() {
       <div>
         <div className="mb-1 flex items-center gap-2">
           <Bell className="text-sky" size={20} />
-          <h2 className="text-lg font-semibold">Уведомления</h2>
+          <h2 className="heading-soft text-ink">Уведомления</h2>
         </div>
-        <p className="text-sm text-slate-600">
+        <p className="copy-soft">
           На iPhone push работает у PWA, добавленной на экран Домой и открытой оттуда.
         </p>
       </div>
@@ -183,7 +183,7 @@ export function SettingsPage() {
         <button
           onClick={() => void handleEnablePush()}
           disabled={!pushState?.serverAvailable}
-          className="tap-button flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-md bg-sky px-4 text-center font-semibold text-white disabled:bg-slate-200 disabled:text-slate-500"
+          className="tap-button flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-md bg-sky px-4 text-center font-extrabold text-white disabled:bg-slate-200 disabled:text-slate-500"
         >
           <Bell size={18} />
           <span className="min-w-0 break-words">Включить уведомления</span>
@@ -192,7 +192,7 @@ export function SettingsPage() {
           <button
             onClick={() => void handleTestPush()}
             disabled={!pushState?.subscribed}
-            className="tap-button flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-sky/40 bg-sky/10 px-3 font-semibold text-sky disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
+            className="tap-button flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-sky/40 bg-sky/10 px-3 font-extrabold text-sky disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
           >
             <Send size={16} />
             Тест
@@ -200,7 +200,7 @@ export function SettingsPage() {
           <button
             onClick={() => void handleDisablePush()}
             disabled={!pushState?.subscribed}
-            className="tap-button min-h-11 min-w-0 rounded-md border border-line px-3 font-semibold text-slate-600 disabled:text-slate-400"
+            className="tap-button min-h-11 min-w-0 rounded-md border border-line px-3 font-extrabold text-slate-600 disabled:text-slate-400"
           >
             Отключить
           </button>
@@ -225,9 +225,9 @@ export function SettingsPage() {
       {message ? <p className="rounded-md border border-line bg-panel p-3 text-sm text-slate-600 shadow-sm">{message}</p> : null}
 
       <form onSubmit={handleSettings} className="surface-in space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
-        <h2 className="text-lg font-semibold">Настройки</h2>
+        <h2 className="heading-soft text-ink">Настройки</h2>
         <label className="block space-y-2">
-          <span className="text-sm text-slate-700">Сигарет в день до курса</span>
+          <span className="label-soft block">Сигарет в день до курса</span>
           <input
             type="number"
             min="1"
@@ -239,7 +239,7 @@ export function SettingsPage() {
           />
         </label>
         <label className="block space-y-2">
-          <span className="text-sm text-slate-700">Цена пачки</span>
+          <span className="label-soft block">Цена пачки</span>
           <input
             type="number"
             min="0"
@@ -252,7 +252,7 @@ export function SettingsPage() {
         </label>
         <button
           type="submit"
-          className="tap-button flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-md bg-mint px-4 font-semibold text-white"
+          className="tap-button flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-md bg-mint px-4 font-extrabold text-white"
         >
           <Save size={18} />
           Сохранить
@@ -264,9 +264,9 @@ export function SettingsPage() {
       {demoEnabled ? demoPanel : null}
 
       <section className="surface-in space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
-        <h2 className="text-lg font-semibold">Перезапуск курса</h2>
+        <h2 className="heading-soft text-ink">Перезапуск курса</h2>
         <label className="block space-y-2">
-          <span className="text-sm text-slate-700">Первая таблетка дня</span>
+          <span className="label-soft block">Первая таблетка дня</span>
           <input
             type="time"
             value={restartTime}
@@ -277,7 +277,7 @@ export function SettingsPage() {
         <button
           onClick={handleRestart}
           className={[
-            "tap-button flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-md px-4 font-semibold",
+            "tap-button flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-md px-4 font-extrabold",
             armedRestart ? "bg-coral text-white" : "border border-coral/50 bg-coral/10 text-coral"
           ].join(" ")}
         >

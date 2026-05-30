@@ -3,6 +3,11 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Onest", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "\"Segoe UI\"", "sans-serif"],
+        display: ["Onest", "ui-sans-serif", "system-ui", "sans-serif"],
+        numeric: ["\"JetBrains Mono\"", "Onest", "ui-monospace", "monospace"]
+      },
       colors: {
         ink: "#10271f",
         paper: "#eef6f1",

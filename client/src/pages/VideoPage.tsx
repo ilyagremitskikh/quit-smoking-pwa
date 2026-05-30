@@ -9,10 +9,10 @@ export function VideoPage() {
       <section className="surface-in rounded-md border border-line bg-panel p-4 shadow-sm">
         <div className="mb-3 flex items-center gap-2">
           <PlayCircle className="text-mint" size={22} />
-          <h2 className="text-lg font-semibold">Послание себе</h2>
+          <h2 className="heading-soft text-ink">Послание себе</h2>
         </div>
         {missing ? (
-          <div className="grid aspect-video place-items-center rounded-md border border-dashed border-line bg-paper p-6 text-center text-sm text-slate-500">
+          <div className="copy-soft grid aspect-video place-items-center rounded-md border border-dashed border-line bg-paper p-6 text-center">
             Видео пока не найдено. На сервере нужен файл `/media/video.mp4`.
           </div>
         ) : (

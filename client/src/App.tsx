@@ -33,14 +33,14 @@ export function App() {
     <div className="app-shell mx-auto flex min-h-screen w-full max-w-md flex-col pt-8 text-ink">
       <header className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-[2.05rem] font-black leading-none tracking-normal">
+          <h1 className="font-display text-[2.12rem] font-black leading-none tracking-normal">
             Quit<span className="text-mint">Kit</span>
           </h1>
         </div>
       </header>
 
       {demoEnabled && demoNow ? (
-        <div className="mb-4 flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-amber/30 bg-amber/10 px-3 py-2 text-sm text-amber">
+        <div className="mb-4 flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-amber/30 bg-amber/10 px-3 py-2 text-sm font-semibold text-amber">
           <span className="min-w-0 break-words">Демо-время: {new Date(demoNow).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
           <button
             onClick={() => {
@@ -73,7 +73,7 @@ export function App() {
                 to={item.to}
                 className={({ isActive }) =>
                   [
-                    "tap-button flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 text-center text-[11px] font-semibold leading-tight transition min-[380px]:text-xs",
+                    "tap-button flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-1 text-center text-[11px] font-bold leading-tight transition min-[380px]:text-xs",
                     isActive ? "text-mint" : "text-slate-500 hover:bg-panel/60 hover:text-ink"
                   ].join(" ")
                 }

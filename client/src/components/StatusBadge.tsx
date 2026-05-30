@@ -16,7 +16,7 @@ const classes: Record<DoseStatus, string> = {
 
 export function StatusBadge({ status }: { status: DoseStatus }) {
   return (
-    <span className={`rounded-full border px-2 py-1 text-xs ${classes[status]}`}>
+    <span className={`rounded-full border px-2 py-1 text-xs font-bold ${classes[status]}`}>
       {labels[status]}
     </span>
   );

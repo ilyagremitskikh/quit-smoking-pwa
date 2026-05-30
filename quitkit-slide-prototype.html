@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>QuitKit · Slide to Confirm</title>
+<style>
+  :root{
+    --bg:#eef3f0;--bg2:#e3ede7;--surface:#fff;--surface-warm:#f6f9f6;
+    --ink:#13261f;--muted:#7c8a83;--line:#e7ece9;
+    --green:#16a36b;--green-2:#1fb978;--green-press:#0f8757;--green-soft:#e3f3eb;--green-soft-ink:#0f7a50;
+    --amber:#e0a23c;--amber-2:#e8b558;--amber-deep:#a96f17;
+    --radius:14px;--sh:0 2px 4px rgba(16,30,24,.05),0 8px 22px rgba(16,30,24,.09);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{background:
+    radial-gradient(120% 80% at 50% -10%, #f3f8f4 0%, transparent 60%),
+    linear-gradient(180deg,var(--bg),var(--bg2));
+    min-height:100vh;color:var(--ink);-webkit-font-smoothing:antialiased;
+    overscroll-behavior:none;user-select:none;-webkit-user-select:none;}
+  body{max-width:460px;margin:0 auto;padding:max(22px,env(safe-area-inset-top)) 18px 60px;}
+
+  .rise{opacity:0;transform:translateY(14px);animation:rise .6s cubic-bezier(.2,.85,.3,1) forwards;}
+  .rise.d1{animation-delay:.05s}.rise.d2{animation-delay:.14s}.rise.d3{animation-delay:.23s}.rise.d4{animation-delay:.32s}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  h1{font-size:21px;font-weight:800;margin-bottom:5px;letter-spacing:-.01em;}
+  .sub{font-size:13.5px;color:var(--muted);margin-bottom:24px;line-height:1.55;}
+  .card{background:var(--surface);border-radius:20px;box-shadow:var(--sh);padding:20px;margin-bottom:18px;}
+  .lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:15px;}
+
+  .slide{position:relative;height:62px;border-radius:17px;background:var(--surface-warm);
+    border:1px solid var(--line);overflow:hidden;touch-action:pan-y;
+    transition:background .4s, border-color .4s;}
+  .slide::before{content:"";position:absolute;inset:0;border-radius:17px;
+    box-shadow:inset 0 0 0 2px transparent;animation:breathe 2.8s ease-in-out infinite;}
+  @keyframes breathe{0%,100%{box-shadow:inset 0 0 0 2px rgba(22,163,107,0)}50%{box-shadow:inset 0 0 0 2px rgba(22,163,107,.10)}}
+  .ghost .slide::before{animation:breatheA 2.8s ease-in-out infinite;}
+  @keyframes breatheA{0%,100%{box-shadow:inset 0 0 0 2px rgba(224,162,60,0)}50%{box-shadow:inset 0 0 0 2px rgba(224,162,60,.14)}}
+
+  .track-fill{position:absolute;left:0;top:0;bottom:0;width:62px;border-radius:17px;
+    background:linear-gradient(90deg,var(--green-soft),#d2efe0);will-change:width;overflow:hidden;}
+  .track-fill::after{content:"";position:absolute;top:0;bottom:0;width:50px;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
+    transform:skewX(-18deg);animation:sheen 2.2s linear infinite;}
+  @keyframes sheen{0%{left:-60px}100%{left:120%}}
+
+  .track-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    gap:9px;font-size:16px;font-weight:700;color:var(--muted);pointer-events:none;z-index:1;
+    transition:color .4s, opacity .2s;}
+  .chevrons span{display:inline-block;color:var(--green);font-weight:800;animation:flow 1.5s ease-in-out infinite;}
+  .chevrons span:nth-child(2){animation-delay:.18s}.chevrons span:nth-child(3){animation-delay:.36s}
+  @keyframes flow{0%,100%{opacity:.25;transform:translateX(0)}50%{opacity:.95;transform:translateX(3px)}}
+  .ghost .chevrons span{color:var(--amber);}
+
+  .thumb{position:absolute;left:4px;top:4px;width:54px;height:54px;border-radius:14px;
+    background:linear-gradient(160deg,var(--green-2),var(--green-press));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:23px;font-weight:800;
+    box-shadow:0 3px 10px rgba(15,135,87,.45),inset 0 1px 0 rgba(255,255,255,.3);
+    will-change:transform;z-index:3;}
+  .thumb .ic{display:flex;transition:transform .3s;}
+  .ghost .thumb{background:linear-gradient(160deg,var(--amber-2),var(--amber-deep));
+    box-shadow:0 3px 10px rgba(168,111,23,.4),inset 0 1px 0 rgba(255,255,255,.3);}
+  .slide.grabbing .thumb{transform:scale(1.06);}
+
+  .slide.done{background:linear-gradient(90deg,var(--green),var(--green-2));border-color:transparent;}
+  .slide.done .track-label{color:#fff;}
+  .slide.done .thumb{background:#fff;color:var(--green);animation:pop .42s cubic-bezier(.2,1.4,.4,1);}
+  .ghost.done{background:linear-gradient(90deg,var(--amber-deep),var(--amber));}
+  .ghost.done .thumb{color:var(--amber-deep);}
+  @keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+  .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.5);
+    transform:translate(-50%,-50%) scale(0);pointer-events:none;z-index:2;}
+  .ripple.go{animation:rip .6s ease-out forwards;}
+  @keyframes rip{to{transform:translate(-50%,-50%) scale(14);opacity:0}}
+
+  .endswitch{position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:2;
+    opacity:.001;width:46px;height:30px;pointer-events:none;}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:9px;text-align:center;}
+
+  .status{margin-top:20px;padding:13px 15px;border-radius:13px;background:var(--surface-warm);
+    border:1px solid var(--line);font-size:13px;color:var(--ink);line-height:1.55;transition:background .3s;}
+  .status b{color:var(--green-soft-ink);}
+  .status.flash{animation:stFlash .7s ease;}
+  @keyframes stFlash{0%{background:var(--green-soft)}100%{background:var(--surface-warm)}}
+  .reset{margin-top:11px;width:100%;padding:12px;border:none;border-radius:13px;background:#eaeeec;
+    color:var(--muted);font-weight:600;font-size:14px;cursor:pointer;transition:transform .1s;}
+  .reset:active{transform:scale(.97);}
+</style>
+</head>
+<body>
+  <h1 class="rise d1">Slide to confirm</h1>
+  <p class="sub rise d1">Веди ползунок пальцем слева направо. В конце пути — настоящий системный «тук» (проверяй в Safari, не внутри приложения Claude).</p>
+
+  <div class="card rise d2">
+    <div class="lbl">Приём таблетки</div>
+    <div class="slide" id="takeSlide">
+      <div class="track-fill"></div>
+      <div class="track-label"><span>Принять</span><span class="chevrons"><span>&#8250;</span><span>&#8250;</span><span>&#8250;</span></span></div>
+      <div class="thumb"><span class="ic">&#10003;</span></div>
+      <input type="checkbox" switch class="endswitch" id="takeSw">
+    </div>
+    <div class="hint">Доведи до конца — подтвердится</div>
+  </div>
+
+  <div class="card rise d3">
+    <div class="lbl">Отметить срыв</div>
+    <div class="slide ghost" id="smokeSlide">
+      <div class="track-fill"></div>
+      <div class="track-label"><span>&#128684; Покурил</span><span class="chevrons"><span>&#8250;</span><span>&#8250;</span><span>&#8250;</span></span></div>
+      <div class="thumb"><span class="ic">&#8594;</span></div>
+      <input type="checkbox" switch class="endswitch" id="smokeSw">
+    </div>
+    <div class="hint">Осознанный жест вместо случайного тапа</div>
+  </div>
+
+  <div class="status rise d4" id="status">Открой в Safari на iPhone и проведи пальцем.</div>
+  <button class="reset rise d4" id="reset">Сбросить оба</button>
+
+<script>
+(function(){
+  function vibe(p){ if(navigator.vibrate){ try{navigator.vibrate(p||12);}catch(e){} } }
+  function setupSlide(slideEl,swId,label,onConfirm){
+    const thumb=slideEl.querySelector('.thumb'),
+          fill=slideEl.querySelector('.track-fill'),
+          sw=document.getElementById(swId),
+          labelEl=slideEl.querySelector('.track-label span:first-child'),
+          chev=slideEl.querySelector('.chevrons');
+    let dragging=false,startX=0,curX=0,maxX=0,confirmed=false,ticked=false;
+    const THUMB=54;
+    function maxTravel(){return slideEl.clientWidth-THUMB-8;}
+    function setPos(x,smooth){
+      x=Math.max(0,Math.min(maxX,x));curX=x;
+      thumb.style.transition=smooth?'transform .3s cubic-bezier(.2,.9,.3,1)':'none';
+      fill.style.transition=smooth?'width .3s cubic-bezier(.2,.9,.3,1)':'none';
+      thumb.style.transform='translateX('+x+'px)';
+      fill.style.width=(x+THUMB)+'px';
+      if(maxX>0){chev.style.opacity=String(1-x/maxX);}
+      if(!ticked && x>maxX*0.9){
+        ticked=true;
+        try{sw.checked=!sw.checked;sw.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){}
+        vibe([14,22,16]);
+      }
+    }
+    function begin(e){if(confirmed)return;dragging=true;slideEl.classList.add('grabbing');
+      maxX=maxTravel();startX=(e.touches?e.touches[0].clientX:e.clientX)-curX;
+      thumb.style.transition='none';vibe(8);}
+    function move(e){if(!dragging)return;e.preventDefault();
+      const px=(e.touches?e.touches[0].clientX:e.clientX);setPos(px-startX,false);}
+    function end(){if(!dragging)return;dragging=false;slideEl.classList.remove('grabbing');
+      if(curX>=maxX*0.88){confirm();}else{ticked=false;setPos(0,true);}}
+    function confirm(){
+      confirmed=true;setPos(maxX,true);slideEl.classList.add('done');
+      labelEl.textContent=label+' \u2713';chev.style.display='none';
+      const r=document.createElement('div');r.className='ripple';
+      r.style.left=(curX+THUMB/2)+'px';r.style.top='50%';r.style.width='40px';r.style.height='40px';
+      slideEl.appendChild(r);requestAnimationFrame(()=>r.classList.add('go'));
+      setTimeout(()=>r.remove(),650);
+      vibe([18,30,22]);onConfirm();
+    }
+    thumb.addEventListener('touchstart',begin,{passive:false});
+    thumb.addEventListener('touchmove',move,{passive:false});
+    thumb.addEventListener('touchend',end);
+    thumb.addEventListener('mousedown',begin);
+    window.addEventListener('mousemove',move);window.addEventListener('mouseup',end);
+    return {reset(){confirmed=false;ticked=false;slideEl.classList.remove('done');
+      labelEl.textContent=label;chev.style.display='';chev.style.opacity='1';setPos(0,true);}};
+  }
+  const status=document.getElementById('status');
+  function note(html){status.innerHTML=html;status.classList.remove('flash');void status.offsetWidth;status.classList.add('flash');}
+  const take=setupSlide(document.getElementById('takeSlide'),'takeSw','Принять',
+    ()=>note('<b>Приём отмечен.</b> Почувствовал \u00ab\u0442\u0443\u043a\u00bb в конце? (только Safari, iOS 26.5+ или Android)'));
+  const smoke=setupSlide(document.getElementById('smokeSlide'),'smokeSw','Покурил',
+    ()=>note('<b>Срыв записан.</b> Тот же жест \u2014 но осознанный.'));
+  document.getElementById('reset').addEventListener('click',()=>{take.reset();smoke.reset();note('Сброшено. Проведи снова.');});
+})();
+</script>
+</body>
+</html>

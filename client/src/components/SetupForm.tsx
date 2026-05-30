@@ -34,12 +34,12 @@ export function SetupForm({ onStarted }: SetupFormProps) {
   return (
     <form onSubmit={handleSubmit} className="surface-in space-y-4 rounded-md border border-line bg-panel p-4 shadow-sm">
       <div>
-        <h2 className="text-xl font-semibold">Старт курса</h2>
-        <p className="mt-1 text-sm text-slate-600">Два поля, и дальше приложение само соберёт 25 дней.</p>
+        <h2 className="heading-soft text-ink">Старт курса</h2>
+        <p className="copy-soft mt-1">Два поля, и дальше приложение само соберёт 25 дней.</p>
       </div>
 
       <label className="block space-y-2">
-        <span className="text-sm text-slate-700">Дата и время старта</span>
+        <span className="label-soft block">Дата и время старта</span>
         <input
           type="datetime-local"
           value={startDate}
@@ -50,7 +50,7 @@ export function SetupForm({ onStarted }: SetupFormProps) {
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm text-slate-700">Первая таблетка дня</span>
+        <span className="label-soft block">Первая таблетка дня</span>
         <input
           type="time"
           value={firstDoseTime}
@@ -65,7 +65,7 @@ export function SetupForm({ onStarted }: SetupFormProps) {
       <button
         type="submit"
         disabled={busy}
-        className="tap-button flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-md bg-mint px-4 font-semibold text-white disabled:opacity-60"
+        className="tap-button flex min-h-12 w-full min-w-0 items-center justify-center gap-2 rounded-md bg-mint px-4 font-extrabold text-white disabled:opacity-60"
       >
         <Rocket size={19} />
         <span className="break-words">{busy ? "Запускаю..." : "Начать"}</span>

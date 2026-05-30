@@ -1,11 +1,11 @@
-import { Banknote, Cigarette, HeartPulse, Pencil, PlayCircle } from "lucide-react";
+import { ArrowRight, Banknote, Check, Cigarette, HeartPulse, Pencil, PlayCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { HoldButton } from "../components/HoldButton.js";
 import { SetupForm } from "../components/SetupForm.js";
+import { SlideConfirm } from "../components/SlideConfirm.js";
 import { StatusBadge } from "../components/StatusBadge.js";
 import { VideoModal } from "../components/VideoModal.js";
 import { api, getDemoNow } from "../lib/api.js";
-import { haptic, hapticStrong } from "../lib/haptics.js";
+import { hapticStrong } from "../lib/haptics.js";
 import { formatDateTimeLocalValue, formatTime, secondsToClock, secondsUntil } from "../lib/time.js";
 import type { AppState, DoseView, ProgressResponse, SmokeLog } from "../lib/types.js";
 
@@ -89,7 +89,6 @@ export function TodayPage() {
     setNotice(null);
     try {
       const dose = await api.takeDose(state.nextDose.id);
-      haptic();
       showUndo({ kind: "dose", scheduleId: dose.id, text: "Приём отмечен" });
       setJustTaken(true);
       window.setTimeout(() => setJustTaken(false), 800);
@@ -104,7 +103,6 @@ export function TodayPage() {
     setNotice(null);
     try {
       const result = await api.smoke();
-      hapticStrong();
       showUndo({ kind: "smoke", smokeId: result.smoke.id, text: smokeNotice(result.smoke) });
       if (result.shouldOfferVideo) {
         setShowVideoOffer(true);
@@ -211,7 +209,7 @@ export function TodayPage() {
       {missedDay ? (
         <section className="surface-in rounded-[22px] border border-amber/25 bg-amber/10 p-4 text-amber shadow-soft">
           <p className="label-soft text-amber">Есть незакрытый день</p>
-          <p className="mt-1 text-sm text-slate-700">День {missedDay.dayNumber}: {missedDay.openSlots} слотов ждут решения.</p>
+          <p className="copy-soft mt-1">День {missedDay.dayNumber}: {missedDay.openSlots} слотов ждут решения.</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
               disabled={busy}
@@ -250,52 +248,47 @@ export function TodayPage() {
 
       {state.mode === "course" || state.mode === "beforeCourse" ? (
         <section className="surface-in rounded-[28px] bg-panel p-5 shadow-soft">
-          <div className="mb-5 flex items-center justify-between text-lg font-black text-slate-500">
+          <div className="heading-soft mb-5 flex items-center justify-between">
             <span>{state.mode === "beforeCourse" ? "До старта" : `День ${state.currentDay} из 25`}</span>
             <span>{state.currentPhase ? `Фаза ${state.currentPhase}` : "Курс"}</span>
           </div>
 
           <div className="rounded-[22px] border border-line bg-white/60 p-5 text-center shadow-inner-soft">
-            <p className="text-lg text-slate-500">
+            <p className="heading-soft">
               {state.nextDose ? `Следующий приём в ${formatTime(state.nextDose.effectiveTime)}` : "На сегодня всё"}
             </p>
-            {state.nextDose?.shifted ? <p className="mt-1 text-xs font-bold text-amber">сдвинуто от фактического приёма</p> : null}
-            <p className="mt-2 text-[3.9rem] font-black leading-none tabular-nums text-ink">
+            {state.nextDose?.shifted ? <p className="mt-1 text-sm font-extrabold text-amber">сдвинуто от фактического приёма</p> : null}
+            <p className="numeric-type mt-2 text-[3.65rem] font-extrabold leading-none text-ink">
               {state.nextDose ? secondsToClock(nextSeconds) : "готово"}
             </p>
           </div>
 
-          <HoldButton
-            holdMs={1000}
+          <SlideConfirm
             disabled={!state.nextDose || busy || state.mode === "beforeCourse"}
             onConfirm={handleTakeDose}
-            className={[
-              "mt-6 flex min-h-16 w-full items-center justify-center rounded-[22px] bg-mint px-5 text-xl font-black text-white shadow-green",
-              justTaken ? "success-pop" : ""
-            ].join(" ")}
-            fillClassName="bg-emerald-700/25"
-          >
-            {state.mode === "beforeCourse" ? "Курс ещё не начался" : justTaken ? "Готово" : "Удерживай, чтобы принять"}
-          </HoldButton>
+            tone="mint"
+            label={state.mode === "beforeCourse" ? "Курс ещё не начался" : "Принять"}
+            completeLabel="Принято"
+            hint={state.mode === "beforeCourse" ? "Таймер покажет первый приём" : "Проведи до конца — подтвердится"}
+            thumbIcon={<Check size={24} strokeWidth={3} />}
+            className={["mt-6", justTaken ? "success-pop" : ""].join(" ")}
+          />
 
-          <p className="mt-4 text-center text-base text-slate-500">
-            {state.mode === "beforeCourse" ? "Таймер покажет первый приём" : "Держи ≈1 сек — кнопка заполнится и подтвердит"}
-          </p>
           <DoseStrip total={state.todaySchedule.length} taken={takenToday} />
-          <p className="mt-3 text-center text-xl font-medium text-slate-500">
+          <p className="mt-3 text-center text-xl font-semibold text-slate-500">
             Сегодня: {takenToday} / {state.todaySchedule.length || "—"}
           </p>
         </section>
       ) : (
         <section className="surface-in rounded-[28px] bg-panel p-5 shadow-soft">
           <p className="label-soft">Курс завершён</p>
-          <h2 className="mt-2 text-2xl font-black">Теперь держим свободу</h2>
+          <h2 className="mt-2 text-2xl font-extrabold">Теперь держим свободу</h2>
         </section>
       )}
 
       {state.todaySchedule.length > 0 ? (
         <section className="surface-in rounded-[24px] bg-panel p-4 shadow-soft">
-          <h2 className="mb-3 text-lg font-black text-slate-500">Сегодняшние слоты</h2>
+          <h2 className="heading-soft mb-3">Сегодняшние слоты</h2>
           <div className="space-y-2">
             {state.todaySchedule.map((dose) => (
               <button
@@ -305,7 +298,7 @@ export function TodayPage() {
                 className="tap-button flex min-h-14 w-full min-w-0 items-center justify-between gap-3 rounded-2xl bg-paper/80 px-3 py-2 text-left"
               >
                 <div className="min-w-0">
-                  <p className="font-bold">{formatTime(dose.effectiveTime)}</p>
+                  <p className="numeric-type text-lg font-bold">{formatTime(dose.effectiveTime)}</p>
                   {dose.takenAt ? (
                     <p className="flex items-center gap-1 text-xs text-slate-500">
                       <Pencil size={12} /> факт: {formatTime(dose.takenAt)}
@@ -325,21 +318,21 @@ export function TodayPage() {
 
       {state.quote ? (
         <section className="surface-in rounded-[24px] bg-panel p-4 shadow-soft">
-          <p className="text-base leading-relaxed text-slate-700">“{state.quote.text}”</p>
-          {state.quote.author ? <p className="mt-2 text-sm text-slate-500">{state.quote.author}</p> : null}
+          <p className="text-base font-medium leading-relaxed text-slate-700">“{state.quote.text}”</p>
+          {state.quote.author ? <p className="copy-soft mt-2">{state.quote.author}</p> : null}
         </section>
       ) : null}
 
-      <HoldButton
-        holdMs={1800}
+      <SlideConfirm
         disabled={busy}
         onConfirm={handleSmoke}
-        className="flex min-h-14 w-full items-center justify-center gap-2 rounded-[22px] border border-amber/35 bg-white/45 px-4 font-black text-amber shadow-sm"
-        fillClassName="bg-amber/15"
-      >
-        <Cigarette size={20} />
-        Удерживай, если покурил
-      </HoldButton>
+        tone="amber"
+        label="Покурил"
+        completeLabel="Записано"
+        hint="Осознанный жест вместо случайного тапа"
+        labelIcon={<Cigarette size={18} />}
+        thumbIcon={<ArrowRight size={23} strokeWidth={3} />}
+      />
 
       {undoToast ? (
         <div className="fixed inset-x-4 bottom-24 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-[22px] bg-ink px-4 py-3 text-sm font-bold text-white shadow-2xl">
@@ -355,9 +348,9 @@ export function TodayPage() {
           <div className="mx-auto w-full max-w-md rounded-[24px] bg-panel p-4 shadow-2xl">
             <div className="mb-3 flex items-center gap-2 text-coral">
               <HeartPulse size={21} />
-              <p className="font-black">Записал. Без самобичевания.</p>
+              <p className="font-extrabold">Записал. Без самобичевания.</p>
             </div>
-            <p className="text-sm leading-relaxed text-slate-600">
+            <p className="copy-soft">
               Окей, записали. Следующий чистый час уже начался. Можно посмотреть послание и вернуться в курс.
             </p>
             <div className="mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
@@ -366,14 +359,14 @@ export function TodayPage() {
                   setShowVideoOffer(false);
                   setShowVideo(true);
                 }}
-                className="tap-button flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-2xl bg-coral px-3 font-black text-white"
+                className="tap-button flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-2xl bg-coral px-3 font-extrabold text-white"
               >
                 <PlayCircle size={18} />
                 <span className="break-words">Посмотреть</span>
               </button>
               <button
                 onClick={() => setShowVideoOffer(false)}
-                className="tap-button min-h-11 min-w-0 rounded-2xl border border-line px-3 font-black text-slate-600"
+                className="tap-button min-h-11 min-w-0 rounded-2xl border border-line px-3 font-extrabold text-slate-600"
               >
                 Не сейчас
               </button>
@@ -396,7 +389,7 @@ function StageChip({ state }: { state: AppState }) {
         : (state.currentDay ?? 99) < 5
           ? `День ${state.currentDay}`
           : "После отказа";
-  return <div className="mb-1 inline-flex rounded-full bg-white/75 px-4 py-2 text-sm font-black text-slate-500 shadow-soft">{label}</div>;
+  return <div className="mb-1 inline-flex rounded-full bg-white/75 px-4 py-2 text-sm font-extrabold text-slate-500 shadow-soft">{label}</div>;
 }
 
 function HeroCard({
@@ -413,29 +406,55 @@ function HeroCard({
   lastSmoke: SmokeLog | null;
 }) {
   const isRecovery = Boolean(lastSmoke) && !isBeforeQuit && smokeFreeDays === 0;
+  const accent = isRecovery ? "coral" : "mint";
+  const label = isRecovery ? "Возвращаемся спокойно" : isBeforeQuit ? "До полного отказа" : "Без срыва";
+  const value = isBeforeQuit ? daysToQuit : smokeFreeDays;
+  const caption = isRecovery
+    ? "следующий чистый час уже начался"
+    : isBeforeQuit
+      ? `${dayWord(daysToQuit)} до 5-го дня`
+      : dayWord(smokeFreeDays, "чистой серии");
+  const support = isRecovery
+    ? "Записали и идём дальше. Без самобичевания."
+    : isBeforeQuit
+      ? "Снижай постепенно. Сегодня достаточно держать курс."
+      : milestone?.text ?? "Держим курс, день за днём.";
+
   return (
-    <section
-      className={[
-        "surface-in relative overflow-hidden rounded-[30px] p-7 text-white shadow-hero",
-        isRecovery ? "bg-gradient-to-br from-coral to-amber" : "bg-gradient-to-br from-[#64cfa9] to-[#1e9f82]"
-      ].join(" ")}
-    >
-      <div className="absolute -right-10 -top-12 h-44 w-44 rounded-full bg-white/14" />
-      <p className="label-soft text-white/85">{isRecovery ? "Возвращаемся спокойно" : isBeforeQuit ? "До полного отказа" : "Без срыва"}</p>
-      <h2 className="mt-5 text-[4.7rem] font-black leading-none">{isBeforeQuit ? daysToQuit : smokeFreeDays}</h2>
-      <p className="mt-3 text-2xl leading-tight">{isBeforeQuit ? "дней — пока можно курить меньше" : "дней чистой серии"}</p>
-      <div className="mt-7 rounded-[22px] bg-white/18 p-4 backdrop-blur">
-        <p className="label-soft text-white/80">{isRecovery ? "Поддержка" : milestone ? "Следующая польза" : "Поддержка"}</p>
-        <p className="mt-2 text-xl font-black leading-snug">
-          {isRecovery
-            ? "Окей, записали. Следующий чистый час уже начался."
-            : isBeforeQuit
-              ? "Снижай постепенно. Полный отказ — на 5-й день."
-              : milestone?.text ?? "Держим курс, день за днём."}
-        </p>
+    <section className="surface-in relative overflow-hidden rounded-[26px] bg-white/85 p-5 shadow-soft">
+      <div
+        aria-hidden="true"
+        className={[
+          "absolute inset-y-5 left-0 w-1 rounded-r-full",
+          accent === "coral" ? "bg-coral" : "bg-mint"
+        ].join(" ")}
+      />
+      <div className="flex min-w-0 items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className={["label-soft", accent === "coral" ? "text-coral" : "text-mint"].join(" ")}>{label}</p>
+          <div className="mt-3 flex min-w-0 items-end gap-3">
+            <p className={["numeric-type text-[3.35rem] font-extrabold leading-none", accent === "coral" ? "text-coral" : "text-mint"].join(" ")}>
+              {value}
+            </p>
+            <p className="pb-1 text-[1.18rem] font-bold leading-tight text-ink">{caption}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className={["mt-4 rounded-[20px] p-4", accent === "coral" ? "bg-coral/10" : "bg-mint/10"].join(" ")}>
+        <p className="label-soft">{isRecovery ? "Поддержка" : milestone && !isBeforeQuit ? "Следующая польза" : "Поддержка"}</p>
+        <p className="mt-2 text-[1.02rem] font-semibold leading-snug text-ink">{support}</p>
       </div>
     </section>
   );
+}
+
+function dayWord(value: number, tail = ""): string {
+  const abs = Math.abs(value);
+  const lastTwo = abs % 100;
+  const last = abs % 10;
+  const word = lastTwo >= 11 && lastTwo <= 14 ? "дней" : last === 1 ? "день" : last >= 2 && last <= 4 ? "дня" : "дней";
+  return tail ? `${word} ${tail}` : word;
 }
 
 function BenefitCard({ label, value, suffix, icon }: { label: string; value: string; suffix: string; icon: "cig" | "money" }) {
@@ -446,8 +465,8 @@ function BenefitCard({ label, value, suffix, icon }: { label: string; value: str
         {icon === "money" ? <Banknote className="text-slate-400" size={18} /> : <Cigarette className="text-slate-400" size={18} />}
       </div>
       <div className="mt-3 flex min-w-0 items-end gap-1">
-        <p className="min-w-0 break-words text-4xl font-black leading-none">{value}</p>
-        <p className="pb-1 text-base font-bold text-slate-500">{suffix}</p>
+        <p className="numeric-type min-w-0 break-words text-4xl font-extrabold leading-none">{value}</p>
+        <p className="pb-1 text-base font-extrabold text-slate-500">{suffix}</p>
       </div>
     </div>
   );

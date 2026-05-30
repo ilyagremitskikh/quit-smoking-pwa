@@ -1,28 +1,26 @@
+export function hapticLight(): void {
+  vibrate(12);
+}
+
+export function hapticTick(): void {
+  vibrate(20);
+}
+
+export function hapticSuccess(): void {
+  vibrate([28, 24, 28]);
+}
+
 export function haptic(duration = 35): void {
-  navigator.vibrate?.(duration);
-  clickHiddenSwitch();
+  vibrate(duration);
 }
 
 export function hapticStrong(): void {
-  navigator.vibrate?.([45, 35, 45]);
-  clickHiddenSwitch();
+  hapticSuccess();
 }
 
-function clickHiddenSwitch(): void {
-  const id = "quitkit-haptic-switch";
-  let input = document.getElementById(id) as HTMLInputElement | null;
-  if (!input) {
-    input = document.createElement("input");
-    input.id = id;
-    input.type = "checkbox";
-    input.setAttribute("switch", "");
-    input.style.position = "fixed";
-    input.style.opacity = "0";
-    input.style.pointerEvents = "none";
-    input.style.width = "1px";
-    input.style.height = "1px";
-    input.style.left = "-10px";
-    document.body.append(input);
+function vibrate(pattern: number | number[]): void {
+  if (typeof navigator === "undefined") {
+    return;
   }
-  input.click();
+  navigator.vibrate?.(pattern);
 }
