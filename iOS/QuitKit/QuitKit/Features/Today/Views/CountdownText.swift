@@ -13,7 +13,7 @@ struct CountdownText: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
             Text(countdownText(now: timeline.date))
-                .font(QuitKitTheme.titleFont(1.62))
+                .font(QuitKitTheme.numeric(.largeTitle, weight: .black, scale: 1.48))
                 .monospacedDigit()
                 .minimumScaleFactor(0.58)
                 .foregroundStyle(QuitKitTheme.ink)

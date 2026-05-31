@@ -14,7 +14,7 @@ struct DoseRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(QuitKitDateFormatter.time(from: dose.effectiveTime))
-                    .font(QuitKitTheme.rounded(.title3, weight: .black))
+                    .font(QuitKitTheme.numeric(.title3, weight: .black))
                     .monospacedDigit()
                     .foregroundStyle(QuitKitTheme.ink)
 

@@ -15,7 +15,7 @@ struct AdherenceCard: View {
                     .font(QuitKitTheme.rounded(.headline, weight: .black))
                 Spacer()
                 Text("\(adherence.percent)%")
-                    .font(QuitKitTheme.rounded(.title2, weight: .black))
+                    .font(QuitKitTheme.numeric(.title2, weight: .black))
                     .monospacedDigit()
             }
             .foregroundStyle(QuitKitTheme.ink)

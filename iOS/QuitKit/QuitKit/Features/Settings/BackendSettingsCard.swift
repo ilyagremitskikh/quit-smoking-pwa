@@ -36,15 +36,35 @@ struct BackendSettingsCard: View {
                 .foregroundStyle(isConnected ? QuitKitTheme.mint : QuitKitTheme.muted)
                 .textSelection(.enabled)
 
-            HStack {
-                Button("Сохранить URL", systemImage: "tray.and.arrow.down", action: onSaveURL)
-                Button("Проверить", systemImage: "bolt.heart", action: onCheck)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: QuitKitTheme.Spacing.compact) {
+                    backendButton("Сохранить URL", systemImage: "tray.and.arrow.down", action: onSaveURL)
+                    backendButton("Проверить", systemImage: "bolt.heart", action: onCheck)
+                }
+
+                VStack(spacing: QuitKitTheme.Spacing.compact) {
+                    backendButton("Сохранить URL", systemImage: "tray.and.arrow.down", action: onSaveURL)
+                    backendButton("Проверить", systemImage: "bolt.heart", action: onCheck)
+                }
             }
-            .font(QuitKitTheme.rounded(.callout, weight: .black))
-            .buttonStyle(.bordered)
-            .tint(QuitKitTheme.mint)
         }
         .padding(QuitKitTheme.Spacing.card)
         .calmCard()
+    }
+
+    private func backendButton(_ title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(QuitKitTheme.Typography.body(.callout, weight: .black))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .padding(.horizontal, QuitKitTheme.Spacing.compact)
+                .foregroundStyle(QuitKitTheme.mint)
+                .background(QuitKitTheme.mintSoft.opacity(0.92))
+                .clipShape(RoundedRectangle(cornerRadius: QuitKitTheme.Radius.control))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
     }
 }

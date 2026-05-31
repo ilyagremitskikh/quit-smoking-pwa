@@ -16,7 +16,7 @@ struct ProgressSummaryCard: View {
 
             HStack(alignment: .lastTextBaseline, spacing: 8) {
                 Text("\(progress.streak.currentDays)")
-                    .font(QuitKitTheme.titleFont(1.35))
+                    .font(QuitKitTheme.numeric(.largeTitle, weight: .black, scale: 1.22))
                     .monospacedDigit()
                 Text("дней")
                     .font(QuitKitTheme.rounded(.title3, weight: .black))

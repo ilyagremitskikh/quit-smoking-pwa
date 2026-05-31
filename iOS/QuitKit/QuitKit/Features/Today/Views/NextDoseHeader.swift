@@ -24,7 +24,7 @@ struct NextDoseHeader: View {
             Spacer(minLength: QuitKitTheme.Spacing.compact)
 
             Text("\(takenToday) / \(max(state.todaySchedule.count, 1))")
-                .font(QuitKitTheme.rounded(.callout, weight: .black))
+                .font(QuitKitTheme.numeric(.callout, weight: .black))
                 .monospacedDigit()
                 .padding(.horizontal, QuitKitTheme.Spacing.compact)
                 .padding(.vertical, 8)

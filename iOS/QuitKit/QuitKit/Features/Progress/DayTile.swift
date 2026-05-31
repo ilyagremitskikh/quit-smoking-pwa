@@ -45,7 +45,7 @@ struct DayTile: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Text("\(day.dayNumber)")
-                .font(QuitKitTheme.rounded(.body, weight: .black))
+                .font(QuitKitTheme.numeric(.body, weight: .black))
                 .monospacedDigit()
                 .foregroundStyle(foreground)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

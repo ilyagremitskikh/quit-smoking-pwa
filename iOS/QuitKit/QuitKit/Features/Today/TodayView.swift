@@ -9,6 +9,8 @@ struct TodayView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var viewModel = TodayViewModel()
 
+    let quoteText: String
+
     var body: some View {
         ZStack(alignment: .bottom) {
             TodayBackground()
@@ -18,6 +20,7 @@ struct TodayView: View {
                     TodayHeader()
                     TodayStateContent(
                         state: viewModel.state,
+                        quoteText: quoteText,
                         isLoading: viewModel.isLoading,
                         isBusy: viewModel.isBusy,
                         errorMessage: viewModel.errorMessage,
@@ -93,5 +96,5 @@ struct TodayView: View {
 }
 
 #Preview {
-    TodayView()
+    TodayView(quoteText: LocalQuoteStore.randomQuote())
 }

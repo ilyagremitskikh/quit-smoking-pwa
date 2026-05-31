@@ -18,10 +18,10 @@ struct MetricPill: View {
 
             HStack(alignment: .lastTextBaseline, spacing: 3) {
                 Text(value)
-                    .font(QuitKitTheme.rounded(.title, weight: .black))
+                    .font(QuitKitTheme.numeric(.title, weight: .black))
                     .monospacedDigit()
                 Text(suffix)
-                    .font(QuitKitTheme.rounded(.callout, weight: .black))
+                    .font(QuitKitTheme.Typography.body(.callout, weight: .black))
             }
             .foregroundStyle(QuitKitTheme.ink)
         }

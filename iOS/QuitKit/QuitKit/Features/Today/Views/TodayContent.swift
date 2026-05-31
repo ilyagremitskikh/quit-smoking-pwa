@@ -7,6 +7,7 @@ import SwiftUI
 
 struct TodayContent: View {
     let state: AppStateResponse
+    let quoteText: String
     let isBusy: Bool
     let onTakeDose: () async -> Void
     let onSmoke: () async -> Void
@@ -21,7 +22,7 @@ struct TodayContent: View {
 
     var body: some View {
         VStack(spacing: QuitKitTheme.Spacing.section) {
-            HeroSummaryCard(state: state)
+            HeroSummaryCard(state: state, quoteText: quoteText)
             NextDoseCard(
                 state: state,
                 takenToday: takenToday,
@@ -32,10 +33,6 @@ struct TodayContent: View {
 
             if !state.todaySchedule.isEmpty {
                 DoseListCard(doses: state.todaySchedule, onEditDose: onEditDose)
-            }
-
-            if let quote = state.quote {
-                QuoteCard(quote: quote)
             }
 
             PressAndHoldActionButton(

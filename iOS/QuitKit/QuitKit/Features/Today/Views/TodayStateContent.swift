@@ -7,6 +7,7 @@ import SwiftUI
 
 struct TodayStateContent: View {
     let state: AppStateResponse?
+    let quoteText: String
     let isLoading: Bool
     let isBusy: Bool
     let errorMessage: String?
@@ -24,6 +25,7 @@ struct TodayStateContent: View {
             } else if let state {
                 TodayContent(
                     state: state,
+                    quoteText: quoteText,
                     isBusy: isBusy,
                     onTakeDose: onTakeDose,
                     onSmoke: onSmoke,

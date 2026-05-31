@@ -8,46 +8,36 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showLaunchOverlay = true
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var todayQuote = LocalQuoteStore.randomQuote()
 
     var body: some View {
-        ZStack {
-            TabView {
-                NavigationStack {
-                    TodayView()
-                }
-                .tabItem {
-                    Label("Сегодня", systemImage: "sun.max.fill")
-                }
-
-                NavigationStack {
-                    ProgressScreen()
-                }
-                .tabItem {
-                    Label("Прогресс", systemImage: "chart.line.uptrend.xyaxis")
-                }
-
-                NavigationStack {
-                    SettingsScreen()
-                }
-                .tabItem {
-                    Label("Настройки", systemImage: "slider.horizontal.3")
-                }
+        TabView {
+            NavigationStack {
+                TodayView(quoteText: todayQuote)
             }
-            .tint(QuitKitTheme.mint)
+            .tabItem {
+                Label("Сегодня", systemImage: "sun.max.fill")
+            }
 
-            if showLaunchOverlay {
-                LaunchOverlayView()
-                    .transition(.opacity)
-                    .zIndex(10)
+            NavigationStack {
+                ProgressScreen()
+            }
+            .tabItem {
+                Label("Прогресс", systemImage: "chart.line.uptrend.xyaxis")
+            }
+
+            NavigationStack {
+                SettingsScreen()
+            }
+            .tabItem {
+                Label("Настройки", systemImage: "slider.horizontal.3")
             }
         }
-        .task {
-            let delay = reduceMotion ? 250_000_000 : 1_850_000_000
-            try? await Task.sleep(nanoseconds: UInt64(delay))
-            withAnimation(reduceMotion ? .linear(duration: 0.01) : .easeOut(duration: 0.28)) {
-                showLaunchOverlay = false
+        .tint(QuitKitTheme.mint)
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                todayQuote = LocalQuoteStore.randomQuote(excluding: todayQuote)
             }
         }
     }

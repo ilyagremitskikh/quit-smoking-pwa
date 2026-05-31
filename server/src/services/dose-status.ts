@@ -14,7 +14,8 @@ export function computeDoseViews(
     const log = logBySchedule.get(row.id);
     const effectiveTime = effectiveTimeBySchedule.get(row.id) ?? row.planned_time;
     if (log) {
-      return toView(row, log.status, log.taken_at, effectiveTime);
+      const status = log.taken_at ? statusForTaking(effectiveTime, new Date(log.taken_at)) : log.status;
+      return toView(row, status, log.taken_at, effectiveTime);
     }
 
     const effective = new Date(effectiveTime);

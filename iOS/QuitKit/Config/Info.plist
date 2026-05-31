@@ -22,6 +22,11 @@
 	<true/>
 	<key>QuitKitDeviceAPIBaseURL</key>
 	<string>$(QUITKIT_DEVICE_API_BASE_URL)</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Onest-Regular.ttf</string>
+		<string>JetBrainsMono-Regular.ttf</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

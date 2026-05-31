@@ -10,6 +10,7 @@ struct HeroSummaryCard: View {
     @State private var auraVisible = false
 
     let state: AppStateResponse
+    let quoteText: String
 
     private var isBeforeQuit: Bool {
         state.mode == .beforeCourse || (state.mode == .course && (state.currentDay ?? 99) < 5)
@@ -30,36 +31,29 @@ struct HeroSummaryCard: View {
         isBeforeQuit ? dayWord(value, tail: "до 5-го дня") : dayWord(value, tail: "чистой серии")
     }
 
-    private var support: String {
-        if isBeforeQuit {
-            return "Снижай постепенно. Сегодня достаточно держать курс."
-        }
-        return state.benefits.nextMilestone?.text ?? state.benefits.currentMilestone?.text ?? "Держим курс, день за днём."
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: QuitKitTheme.Spacing.section) {
             VStack(alignment: .leading, spacing: QuitKitTheme.Spacing.compact / 2) {
                 Text(title.uppercased())
-                    .font(QuitKitTheme.rounded(.caption, weight: .heavy))
+                    .font(QuitKitTheme.Typography.label())
                     .foregroundStyle(QuitKitTheme.mint)
 
                 HStack(alignment: .lastTextBaseline, spacing: QuitKitTheme.Spacing.compact) {
                     Text("\(value)")
-                        .font(QuitKitTheme.titleFont(1.5))
+                        .font(QuitKitTheme.numeric(.largeTitle, weight: .black, scale: 1.32))
                         .monospacedDigit()
                         .foregroundStyle(QuitKitTheme.mint)
                         .contentTransition(.numericText())
 
                     Text(caption)
-                        .font(QuitKitTheme.rounded(.title3, weight: .bold))
+                        .font(QuitKitTheme.Typography.title(.title3, weight: .bold))
                         .foregroundStyle(QuitKitTheme.ink)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
-            Text(support)
-                .font(QuitKitTheme.rounded(.body, weight: .semibold))
+            Text(quoteText)
+                .font(QuitKitTheme.Typography.body(.body, weight: .bold))
                 .foregroundStyle(QuitKitTheme.ink)
                 .lineSpacing(3)
                 .padding(QuitKitTheme.Spacing.compact + 4)

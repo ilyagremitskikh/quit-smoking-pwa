@@ -19,11 +19,13 @@ final class TodayViewModel {
 
     private let api: APIClient
     private let notifications: LocalNotificationService
+    private let sounds: SoundFeedbackService
     private var undoTask: Task<Void, Never>?
 
-    init(api: APIClient? = nil, notifications: LocalNotificationService? = nil) {
+    init(api: APIClient? = nil, notifications: LocalNotificationService? = nil, sounds: SoundFeedbackService? = nil) {
         self.api = api ?? APIClient()
         self.notifications = notifications ?? LocalNotificationService()
+        self.sounds = sounds ?? .shared
     }
 
     func load() async {
@@ -56,6 +58,7 @@ final class TodayViewModel {
         do {
             let dose = try await api.takeDose(scheduleId: nextDose.id)
             showUndo(.dose(scheduleId: dose.id, text: "Приём отмечен"))
+            sounds.playSubmit()
             triggerFeedback(.success)
             await load()
         } catch {
@@ -77,6 +80,7 @@ final class TodayViewModel {
         do {
             let result = try await api.smoke()
             showUndo(.smoke(smokeId: result.smoke.id, text: result.smoke.noticeText))
+            sounds.playSubmit()
             triggerFeedback(.success)
             await load()
         } catch {
@@ -134,6 +138,7 @@ final class TodayViewModel {
         do {
             _ = try await api.takeDose(scheduleId: editor.dose.id, takenAt: editor.takenAt)
             doseEditor = nil
+            sounds.playSubmit()
             triggerFeedback(.success)
             await load()
             isBusy = false

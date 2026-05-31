@@ -45,6 +45,36 @@ describe("computeDoseViews", () => {
     expect(views[0]?.status).toBe("late");
   });
 
+  it("recomputes a stored late log inside the grace window as taken", () => {
+    const logs: DoseLogRow[] = [
+      {
+        id: 1,
+        schedule_id: 1,
+        taken_at: "2026-05-29T03:01:00.000Z",
+        status: "late"
+      }
+    ];
+
+    const views = computeDoseViews(rows, logs, new Date("2026-05-29T04:00:00.000Z"));
+
+    expect(views[0]?.status).toBe("taken");
+  });
+
+  it("keeps a stored late log after the grace window as late", () => {
+    const logs: DoseLogRow[] = [
+      {
+        id: 1,
+        schedule_id: 1,
+        taken_at: "2026-05-29T03:10:01.000Z",
+        status: "taken"
+      }
+    ];
+
+    const views = computeDoseViews(rows, logs, new Date("2026-05-29T04:00:00.000Z"));
+
+    expect(views[0]?.status).toBe("late");
+  });
+
   it("shifts the next same-day dose from a late taken_at", () => {
     const logs: DoseLogRow[] = [
       {

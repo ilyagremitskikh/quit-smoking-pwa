@@ -8,6 +8,7 @@ import UserNotifications
 
 struct LocalNotificationService {
     private static let dosePrefix = "quitkit-dose-"
+    private static let reminderSound = UNNotificationSoundName("notification.wav")
     private let center = UNUserNotificationCenter.current()
 
     func authorizationStatus() async -> UNAuthorizationStatus {
@@ -47,7 +48,7 @@ struct LocalNotificationService {
         let content = UNMutableNotificationContent()
         content.title = "QuitKit"
         content.body = "Пора к следующему приёму. Спокойно, без спешки."
-        content.sound = .default
+        content.sound = UNNotificationSound(named: Self.reminderSound)
         content.badge = 1
 
         let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)

@@ -5,6 +5,12 @@
       "source": "smithery.ai",
       "sourceType": "well-known",
       "computedHash": "a2561f129b0806ee58af02521f5845f2bc5474003d2227109ce9166d261c3ae0"
+    },
+    "swiftui-pro": {
+      "source": "twostraws/swiftui-agent-skill",
+      "sourceType": "github",
+      "skillPath": "swiftui-pro/SKILL.md",
+      "computedHash": "07033426e384295a4b49cf0b2ffdefd4098cae4af53fef16bc1f2d9281118c41"
     }
   }
 }
