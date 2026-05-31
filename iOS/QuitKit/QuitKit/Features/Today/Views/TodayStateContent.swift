@@ -15,7 +15,6 @@ struct TodayStateContent: View {
     let onTakeDose: () async -> Void
     let onSmoke: () async -> Void
     let onEditDose: (DoseView) -> Void
-    let onPressStart: () -> Void
     let onFeedback: (FeedbackKind) -> Void
 
     var body: some View {
@@ -29,8 +28,7 @@ struct TodayStateContent: View {
                     isBusy: isBusy,
                     onTakeDose: onTakeDose,
                     onSmoke: onSmoke,
-                    onEditDose: onEditDose,
-                    onPressStart: onPressStart
+                    onEditDose: onEditDose
                 )
             } else if isLoading {
                 LoadingCard()

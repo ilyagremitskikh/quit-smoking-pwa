@@ -10,7 +10,6 @@ struct NextDoseCard: View {
     let takenToday: Int
     let isBusy: Bool
     let onTakeDose: () async -> Void
-    let onPressStart: () -> Void
 
     private var actionTitle: String {
         if state.mode == .beforeCourse {
@@ -35,7 +34,6 @@ struct NextDoseCard: View {
                 systemImage: "checkmark",
                 tint: QuitKitTheme.mint,
                 disabled: state.nextDose == nil || state.mode == .beforeCourse || isBusy,
-                onPressStart: onPressStart,
                 action: onTakeDose
             )
         }

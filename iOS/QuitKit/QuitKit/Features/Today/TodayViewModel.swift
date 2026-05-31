@@ -5,6 +5,7 @@
 
 import Foundation
 import Observation
+import WidgetKit
 
 @MainActor
 @Observable
@@ -61,6 +62,7 @@ final class TodayViewModel {
             sounds.playSubmit()
             triggerFeedback(.success)
             await load()
+            WidgetCenter.shared.reloadAllTimelines()
         } catch {
             errorMessage = error.localizedDescription
             triggerFeedback(.warning)
@@ -83,6 +85,7 @@ final class TodayViewModel {
             sounds.playSubmit()
             triggerFeedback(.success)
             await load()
+            WidgetCenter.shared.reloadAllTimelines()
         } catch {
             errorMessage = error.localizedDescription
             triggerFeedback(.warning)
@@ -111,6 +114,7 @@ final class TodayViewModel {
             undoTask?.cancel()
             triggerFeedback(.selection)
             await load()
+            WidgetCenter.shared.reloadAllTimelines()
         } catch {
             errorMessage = error.localizedDescription
             triggerFeedback(.warning)
@@ -141,6 +145,7 @@ final class TodayViewModel {
             sounds.playSubmit()
             triggerFeedback(.success)
             await load()
+            WidgetCenter.shared.reloadAllTimelines()
             isBusy = false
             return nil
         } catch {
@@ -164,6 +169,7 @@ final class TodayViewModel {
             doseEditor = nil
             triggerFeedback(.selection)
             await load()
+            WidgetCenter.shared.reloadAllTimelines()
             isBusy = false
             return nil
         } catch {

@@ -11,10 +11,22 @@ struct PressAndHoldFill: View {
 
     var body: some View {
         GeometryReader { proxy in
-            RoundedRectangle(cornerRadius: QuitKitTheme.Radius.control)
+            let fillWidth = proxy.size.width * min(max(progress, 0), 1)
+
+            Rectangle()
                 .fill(tint.gradient)
-                .frame(width: max(0, proxy.size.width * progress))
+                .mask(alignment: .leading) {
+                    Rectangle()
+                        .frame(width: fillWidth)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: QuitKitTheme.Radius.control))
+                .overlay(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: QuitKitTheme.Radius.control)
+                        .strokeBorder(Color.white.opacity(progress > 0 ? 0.18 : 0), lineWidth: 1)
+                }
         }
+        .allowsHitTesting(false)
         .clipShape(RoundedRectangle(cornerRadius: QuitKitTheme.Radius.control))
     }
 }

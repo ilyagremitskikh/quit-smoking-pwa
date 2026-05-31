@@ -13,44 +13,57 @@ struct PressAndHoldActionButton: View {
     let systemImage: String
     let tint: Color
     let disabled: Bool
-    let onPressStart: () -> Void
     let action: () async -> Void
 
     @State private var progress = 0.0
     @State private var isPressing = false
     @State private var didComplete = false
-    @State private var holdTask: Task<Void, Never>?
+    @State private var phase: PressAndHoldPhase = .idle
+    @State private var pressFeedbackSeed = 0
+    @State private var releaseFeedbackSeed = 0
+    @State private var completionFeedbackSeed = 0
+    @State private var completionPulseSeed = 0
+    @State private var hapticRampTick: PressAndHoldHapticTick?
 
     var body: some View {
-        ZStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: QuitKitTheme.Radius.control)
-                .fill(disabled ? Color.gray.opacity(0.18) : tint.opacity(0.14))
+        Button(action: runAction) {
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: QuitKitTheme.Radius.control)
+                    .fill(disabled ? Color.gray.opacity(0.18) : tint.opacity(0.14))
 
-            PressAndHoldFill(progress: progress, tint: tint)
+                PressAndHoldFill(progress: progress, tint: tint)
 
-            PressAndHoldLabel(
-                title: title,
-                subtitle: subtitle,
-                systemImage: systemImage,
-                tint: tint,
-                disabled: disabled,
-                progress: progress
-            )
-                .padding(.horizontal, QuitKitTheme.Spacing.compact)
+                PressAndHoldLabel(
+                    title: title,
+                    subtitle: subtitle,
+                    systemImage: systemImage,
+                    tint: tint,
+                    disabled: disabled,
+                    progress: progress,
+                    completionPulseSeed: completionPulseSeed
+                )
+                    .padding(.horizontal, QuitKitTheme.Spacing.compact)
+            }
+            .frame(minHeight: 74)
         }
-        .frame(minHeight: 74)
-        .contentShape(RoundedRectangle(cornerRadius: QuitKitTheme.Radius.control))
-        .opacity(disabled ? 0.62 : 1)
-        .scaleEffect(isPressing && !reduceMotion ? 0.985 : 1)
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in startHold() }
-                .onEnded { _ in cancelHoldIfNeeded() }
+        .buttonStyle(
+            PressAndHoldButtonStyle(
+                progress: $progress,
+                isPressing: $isPressing,
+                didComplete: $didComplete,
+                phase: $phase,
+                pressFeedbackSeed: $pressFeedbackSeed,
+                releaseFeedbackSeed: $releaseFeedbackSeed,
+                completionFeedbackSeed: $completionFeedbackSeed,
+                completionPulseSeed: $completionPulseSeed,
+                hapticRampTick: $hapticRampTick,
+                tint: tint,
+                reduceMotion: reduceMotion,
+                isEnabled: !disabled
+            )
         )
-        .animation(reduceMotion ? nil : QuitKitTheme.Motion.press, value: isPressing)
-        .allowsHitTesting(!disabled)
-        .accessibilityElement(children: .ignore)
-        .accessibilityAddTraits(.isButton)
+        .disabled(disabled)
+        .opacity(disabled ? 0.62 : 1)
         .accessibilityLabel(title)
         .accessibilityHint(subtitle)
         .accessibilityValue(progress > 0 ? "\(Int(progress * 100)) процентов" : "")
@@ -59,60 +72,25 @@ struct PressAndHoldActionButton: View {
             guard !disabled else {
                 return
             }
-            Task {
-                await action()
-            }
+            runAction()
         }
-        .onDisappear {
-            holdTask?.cancel()
+        .sensoryFeedback(.press(.button), trigger: pressFeedbackSeed)
+        .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.42), trigger: releaseFeedbackSeed)
+        .sensoryFeedback(.pathComplete, trigger: completionFeedbackSeed)
+        .sensoryFeedback(trigger: hapticRampTick) { _, tick in
+            guard let tick else {
+                return nil
+            }
+            return .impact(flexibility: .soft, intensity: tick.intensity)
         }
     }
 
-    private func startHold() {
-        guard !disabled, !isPressing else {
+    private func runAction() {
+        guard !disabled else {
             return
         }
-
-        didComplete = false
-        isPressing = true
-        progress = 0
-        onPressStart()
-
-        withAnimation(reduceMotion ? nil : .linear(duration: QuitKitTheme.Motion.holdDuration)) {
-            progress = 1
-        }
-
-        holdTask?.cancel()
-        holdTask = Task {
-            try? await Task.sleep(for: .seconds(QuitKitTheme.Motion.holdDuration))
-            guard !Task.isCancelled else {
-                return
-            }
-
-            await MainActor.run {
-                didComplete = true
-                isPressing = false
-            }
-
+        Task {
             await action()
-
-            await MainActor.run {
-                withAnimation(reduceMotion ? nil : QuitKitTheme.Motion.reset) {
-                    progress = 0
-                }
-            }
-        }
-    }
-
-    private func cancelHoldIfNeeded() {
-        guard !didComplete else {
-            return
-        }
-
-        holdTask?.cancel()
-        isPressing = false
-        withAnimation(reduceMotion ? nil : QuitKitTheme.Motion.reset) {
-            progress = 0
         }
     }
 }

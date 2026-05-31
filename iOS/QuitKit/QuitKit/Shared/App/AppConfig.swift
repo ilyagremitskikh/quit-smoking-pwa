@@ -7,21 +7,33 @@ import Foundation
 
 enum AppConfig {
     static let backendURLDefaultsKey = "QuitKitBackendBaseURL"
+    static let appGroupIdentifier = "group.com.gremitskikh.QuitKit"
 
     static var apiBaseURL: URL {
         URL(string: apiBaseURLString) ?? defaultAPIBaseURL
     }
 
     static var apiBaseURLString: String {
-        let override = UserDefaults.standard.string(forKey: backendURLDefaultsKey)?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let override, !override.isEmpty {
-            return override
+        for (index, storage) in [defaults, UserDefaults.standard].enumerated() {
+            let override = storage.string(forKey: backendURLDefaultsKey)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let override, !override.isEmpty {
+                if index > 0 {
+                    defaults.set(override, forKey: backendURLDefaultsKey)
+                }
+                return override
+            }
         }
         return defaultAPIBaseURL.absoluteString
     }
 
     static func updateAPIBaseURL(_ value: String) {
-        UserDefaults.standard.set(value.trimmingCharacters(in: .whitespacesAndNewlines), forKey: backendURLDefaultsKey)
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        defaults.set(trimmed, forKey: backendURLDefaultsKey)
+        UserDefaults.standard.set(trimmed, forKey: backendURLDefaultsKey)
+    }
+
+    private static var defaults: UserDefaults {
+        UserDefaults(suiteName: appGroupIdentifier) ?? .standard
     }
 
     #if targetEnvironment(simulator)

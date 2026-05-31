@@ -12,6 +12,7 @@ struct PressAndHoldLabel: View {
     let tint: Color
     let disabled: Bool
     let progress: Double
+    let completionPulseSeed: Int
 
     var body: some View {
         HStack(spacing: QuitKitTheme.Spacing.compact + 2) {
@@ -40,6 +41,7 @@ struct PressAndHoldLabel: View {
                 .font(.title3.weight(.bold))
                 .foregroundStyle(progress > 0.62 ? .white : tint)
                 .opacity(disabled ? 0.32 : 1)
+                .symbolEffect(.bounce, value: completionPulseSeed)
                 .accessibilityHidden(true)
         }
         .padding(.vertical, 10)

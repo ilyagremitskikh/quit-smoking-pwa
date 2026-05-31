@@ -6,11 +6,55 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7B8D45085E394238A673B52 /* QuitKitWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C21013A3B4844E92B874DC93 /* QuitKitWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		59C0CFC424434D58B603307D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F80135162FCBFB8F00A4FEE7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AE4A0EC4A49746F4BD066E06;
+			remoteInfo = QuitKitWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A5F0CCD81F834DD0AE69DA05 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				7B8D45085E394238A673B52 /* QuitKitWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		C21013A3B4844E92B874DC93 /* QuitKitWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuitKitWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F801351E2FCBFB8F00A4FEE7 /* QuitKit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuitKit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		2101C468A0D34BF9A95AEB92 /* QuitKit/Resources/Fonts */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = QuitKit/Resources/Fonts;
+			sourceTree = "<group>";
+		};
+		9D7BCE8966244F3D8A8A6CAA /* QuitKitWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = QuitKitWidget;
+			sourceTree = "<group>";
+		};
+		E9E1B3BB7A5B478191EA0558 /* QuitKit/Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = QuitKit/Shared;
+			sourceTree = "<group>";
+		};
 		F80135202FCBFB8F00A4FEE7 /* QuitKit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = QuitKit;
@@ -19,6 +63,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		DF81D31169F548C5909D19C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F801351B2FCBFB8F00A4FEE7 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -33,6 +84,9 @@
 			isa = PBXGroup;
 			children = (
 				F80135202FCBFB8F00A4FEE7 /* QuitKit */,
+				9D7BCE8966244F3D8A8A6CAA /* QuitKitWidget */,
+				E9E1B3BB7A5B478191EA0558 /* QuitKit/Shared */,
+				2101C468A0D34BF9A95AEB92 /* QuitKit/Resources/Fonts */,
 				F801351F2FCBFB8F00A4FEE7 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				F801351E2FCBFB8F00A4FEE7 /* QuitKit.app */,
+				C21013A3B4844E92B874DC93 /* QuitKitWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +103,30 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		AE4A0EC4A49746F4BD066E06 /* QuitKitWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9FCA8C5F2D354A7B83505C62 /* Build configuration list for PBXNativeTarget "QuitKitWidgetExtension" */;
+			buildPhases = (
+				70FD20BF985045489E43F1A7 /* Sources */,
+				DF81D31169F548C5909D19C /* Frameworks */,
+				F2B361684E9A419EB88AA31F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				2101C468A0D34BF9A95AEB92 /* QuitKit/Resources/Fonts */,
+				9D7BCE8966244F3D8A8A6CAA /* QuitKitWidget */,
+				E9E1B3BB7A5B478191EA0558 /* QuitKit/Shared */,
+			);
+			name = QuitKitWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = QuitKitWidgetExtension;
+			productReference = C21013A3B4844E92B874DC93 /* QuitKitWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		F801351D2FCBFB8F00A4FEE7 /* QuitKit */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F80135292FCBFB9100A4FEE7 /* Build configuration list for PBXNativeTarget "QuitKit" */;
@@ -55,10 +134,12 @@
 				F801351A2FCBFB8F00A4FEE7 /* Sources */,
 				F801351B2FCBFB8F00A4FEE7 /* Frameworks */,
 				F801351C2FCBFB8F00A4FEE7 /* Resources */,
+				A5F0CCD81F834DD0AE69DA05 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				821DDF9993504FF7BBFEAE /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F80135202FCBFB8F00A4FEE7 /* QuitKit */,
@@ -80,6 +161,9 @@
 				LastSwiftUpdateCheck = 2650;
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
+					AE4A0EC4A49746F4BD066E06 = {
+						CreatedOnToolsVersion = 26.5;
+					};
 					F801351D2FCBFB8F00A4FEE7 = {
 						CreatedOnToolsVersion = 26.5;
 					};
@@ -100,11 +184,19 @@
 			projectRoot = "";
 			targets = (
 				F801351D2FCBFB8F00A4FEE7 /* QuitKit */,
+				AE4A0EC4A49746F4BD066E06 /* QuitKitWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		F2B361684E9A419EB88AA31F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F801351C2FCBFB8F00A4FEE7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +207,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		70FD20BF985045489E43F1A7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F801351A2FCBFB8F00A4FEE7 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +223,75 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		821DDF9993504FF7BBFEAE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AE4A0EC4A49746F4BD066E06 /* QuitKitWidgetExtension */;
+			targetProxy = 59C0CFC424434D58B603307D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		094C9B85C93E47438418339 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = QuitKitWidget/QuitKitWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR3T5HQ654;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/QuitKitWidget-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gremitskikh.QuitKit.QuitKitWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				QUITKIT_DEVICE_API_BASE_URL = "http://192.168.1.125:3000";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B1E40C6EDF6F4A4581BF14 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = QuitKitWidget/QuitKitWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR3T5HQ654;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/QuitKitWidget-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.gremitskikh.QuitKit.QuitKitWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				QUITKIT_DEVICE_API_BASE_URL = "http://192.168.1.125:3000";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		F80135272FCBFB9100A4FEE7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -251,6 +418,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = QuitKit/QuitKit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BR3T5HQ654;
@@ -287,6 +455,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = QuitKit/QuitKit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BR3T5HQ654;
@@ -321,6 +490,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		9FCA8C5F2D354A7B83505C62 /* Build configuration list for PBXNativeTarget "QuitKitWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				094C9B85C93E47438418339 /* Debug */,
+				B1E40C6EDF6F4A4581BF14 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		F80135192FCBFB8F00A4FEE7 /* Build configuration list for PBXProject "QuitKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

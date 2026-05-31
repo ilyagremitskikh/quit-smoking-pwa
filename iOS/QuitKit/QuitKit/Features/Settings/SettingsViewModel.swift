@@ -5,6 +5,7 @@
 
 import Foundation
 import Observation
+import WidgetKit
 import UserNotifications
 
 @MainActor
@@ -49,18 +50,26 @@ final class SettingsViewModel {
     }
 
     func checkConnection() async {
+        let checkedURL = backendURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: checkedURL), !checkedURL.isEmpty else {
+            connectionOK = false
+            connectionStatus = "Некорректный Backend URL"
+            return
+        }
+
         do {
-            let response = try await api.health()
+            let response = try await APIClient(baseURL: url).health()
             connectionOK = response.ok
-            connectionStatus = response.ok ? "Backend отвечает" : "Backend ответил неожиданно"
+            connectionStatus = response.ok ? "Backend отвечает\n\(checkedURL)" : "Backend ответил неожиданно\n\(checkedURL)"
         } catch {
             connectionOK = false
-            connectionStatus = error.localizedDescription
+            connectionStatus = "\(error.localizedDescription)\n\(checkedURL)"
         }
     }
 
     func saveBackendURL() async {
         AppConfig.updateAPIBaseURL(backendURL)
+        WidgetCenter.shared.reloadAllTimelines()
         feedbackEvent = FeedbackEvent(kind: .selection)
         await checkConnection()
     }

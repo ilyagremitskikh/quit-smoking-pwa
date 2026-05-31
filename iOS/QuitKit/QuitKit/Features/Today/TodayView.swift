@@ -36,9 +36,6 @@ struct TodayView: View {
                         onEditDose: { dose in
                             viewModel.openDoseEditor(for: dose)
                         },
-                        onPressStart: {
-                            viewModel.triggerFeedback(.selection)
-                        },
                         onFeedback: { kind in
                             viewModel.triggerFeedback(kind)
                         }

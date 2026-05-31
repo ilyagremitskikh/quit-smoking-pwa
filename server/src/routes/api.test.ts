@@ -6,11 +6,12 @@ import { Repository } from "../db/repository.js";
 
 describe("api routes", () => {
   let app: Awaited<ReturnType<typeof buildApp>>;
+  let db: Database.Database;
 
   beforeEach(async () => {
     process.env.NODE_ENV = "test";
     delete process.env.ENABLE_DEMO;
-    const db = new Database(":memory:");
+    db = new Database(":memory:");
     initializeDatabase(db);
     app = await buildApp(new Repository(db));
   });
@@ -194,6 +195,92 @@ describe("api routes", () => {
     expect(dose.statusCode).toBe(200);
     expect(dose.json().takenAt).toBe("2026-05-29T03:30:00.000Z");
     expect(dose.json().status).toBe("late");
+  });
+
+  it("keeps dose API status taken inside the ten minute grace window", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/api/course",
+      payload: {
+        startDate: "2026-05-29T03:00:00.000Z",
+        firstDoseTime: "08:00"
+      }
+    });
+    const state = await app.inject({
+      method: "GET",
+      url: "/api/state",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T03:05:00.000Z" }
+    });
+    const firstDoseId = state.json().todaySchedule[0].id;
+
+    const plusOne = await app.inject({
+      method: "POST",
+      url: `/api/doses/${firstDoseId}/take`,
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T04:00:00.000Z" },
+      payload: { takenAt: "2026-05-29T03:01:00.000Z" }
+    });
+    const plusTen = await app.inject({
+      method: "POST",
+      url: `/api/doses/${firstDoseId}/take`,
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T04:00:00.000Z" },
+      payload: { takenAt: "2026-05-29T03:10:00.000Z" }
+    });
+    const plusTenAndOneSecond = await app.inject({
+      method: "POST",
+      url: `/api/doses/${firstDoseId}/take`,
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T04:00:00.000Z" },
+      payload: { takenAt: "2026-05-29T03:10:01.000Z" }
+    });
+
+    expect(plusOne.statusCode).toBe(200);
+    expect(plusOne.json().status).toBe("taken");
+    expect(plusTen.statusCode).toBe(200);
+    expect(plusTen.json().status).toBe("taken");
+    expect(plusTenAndOneSecond.statusCode).toBe(200);
+    expect(plusTenAndOneSecond.json().status).toBe("late");
+  });
+
+  it("recomputes stale late logs inside grace for state and progress", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/api/course",
+      payload: {
+        startDate: "2026-05-29T03:00:00.000Z",
+        firstDoseTime: "08:00"
+      }
+    });
+    const state = await app.inject({
+      method: "GET",
+      url: "/api/state",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T03:05:00.000Z" }
+    });
+    const firstDoseId = state.json().todaySchedule[0].id;
+    await app.inject({
+      method: "POST",
+      url: `/api/doses/${firstDoseId}/take`,
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T04:00:00.000Z" },
+      payload: { takenAt: "2026-05-29T03:01:00.000Z" }
+    });
+    db.prepare("UPDATE dose_log SET status = 'late' WHERE schedule_id = ?").run(firstDoseId);
+
+    const recomputedState = await app.inject({
+      method: "GET",
+      url: "/api/state",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T04:00:00.000Z" }
+    });
+    const progress = await app.inject({
+      method: "GET",
+      url: "/api/progress",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-29T04:00:00.000Z" }
+    });
+
+    expect(recomputedState.json().todaySchedule[0]).toMatchObject({
+      id: firstDoseId,
+      status: "taken",
+      takenAt: "2026-05-29T03:01:00.000Z"
+    });
+    expect(progress.json().adherence).toMatchObject({ taken: 1, late: 0 });
+    expect(progress.json().days[0]).toMatchObject({ taken: 1, late: 0 });
   });
 
   it("deletes a smoke log and recalculates benefits", async () => {

@@ -12,7 +12,6 @@ struct TodayContent: View {
     let onTakeDose: () async -> Void
     let onSmoke: () async -> Void
     let onEditDose: (DoseView) -> Void
-    let onPressStart: () -> Void
 
     private var takenToday: Int {
         state.todaySchedule.filter { dose in
@@ -27,8 +26,7 @@ struct TodayContent: View {
                 state: state,
                 takenToday: takenToday,
                 isBusy: isBusy,
-                onTakeDose: onTakeDose,
-                onPressStart: onPressStart
+                onTakeDose: onTakeDose
             )
 
             if !state.todaySchedule.isEmpty {
@@ -41,7 +39,6 @@ struct TodayContent: View {
                 systemImage: "smoke",
                 tint: QuitKitTheme.amber,
                 disabled: isBusy,
-                onPressStart: onPressStart,
                 action: onSmoke
             )
         }

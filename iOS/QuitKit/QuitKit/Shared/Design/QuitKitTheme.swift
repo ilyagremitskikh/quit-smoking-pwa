@@ -35,6 +35,7 @@ enum QuitKitTheme {
     enum Motion {
         static let standard = Animation.snappy(duration: 0.32)
         static let press = Animation.snappy(duration: 0.18)
+        static let resetDuration = 0.22
         static let reset = Animation.snappy(duration: 0.22)
         static let holdDuration = 0.86
     }
