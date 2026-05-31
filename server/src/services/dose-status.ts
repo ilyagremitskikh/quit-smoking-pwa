@@ -1,5 +1,7 @@
 import type { DoseLogRow, DoseScheduleRow, DoseView } from "../types/domain.js";
 
+export const DOSE_GRACE_MINUTES = 10;
+
 export function computeDoseViews(
   rows: DoseScheduleRow[],
   logs: DoseLogRow[],
@@ -16,7 +18,11 @@ export function computeDoseViews(
     }
 
     const effective = new Date(effectiveTime);
+    const graceEndsAt = addMinutes(effective, DOSE_GRACE_MINUTES);
     if (effective.getTime() > now.getTime()) {
+      return toView(row, "pending", null, effectiveTime);
+    }
+    if (graceEndsAt.getTime() >= now.getTime()) {
       return toView(row, "pending", null, effectiveTime);
     }
 
@@ -31,7 +37,8 @@ export function computeDoseViews(
 }
 
 export function statusForTaking(effectiveTime: string, now = new Date()): "taken" | "late" {
-  return now.getTime() > new Date(effectiveTime).getTime() ? "late" : "taken";
+  const graceEndsAt = addMinutes(new Date(effectiveTime), DOSE_GRACE_MINUTES);
+  return now.getTime() > graceEndsAt.getTime() ? "late" : "taken";
 }
 
 function toView(
@@ -82,7 +89,11 @@ export function computeEffectiveTimes(
 }
 
 function addMinutesIso(iso: string, minutes: number): string {
-  return new Date(new Date(iso).getTime() + minutes * 60_000).toISOString();
+  return addMinutes(new Date(iso), minutes).toISOString();
+}
+
+function addMinutes(date: Date, minutes: number): Date {
+  return new Date(date.getTime() + minutes * 60_000);
 }
 
 function maxIso(a: string, b: string): string {

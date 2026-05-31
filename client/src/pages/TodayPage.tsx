@@ -216,7 +216,7 @@ export function TodayPage() {
   const missedDay = progress?.missedDays?.[0] ?? null;
 
   return (
-    <div className="space-y-4 pb-8">
+    <div className="space-y-4 pb-2">
       <StageChip state={state} />
 
       {error ? <p className="rounded-2xl border border-coral/30 bg-coral/10 p-3 text-sm text-coral">{error}</p> : null}
@@ -348,6 +348,7 @@ export function TodayPage() {
         hint="Осознанный жест вместо случайного тапа"
         labelIcon={<Cigarette size={18} />}
         thumbIcon={<ArrowRight size={23} strokeWidth={3} />}
+        className="mb-0"
       />
 
       {undoToast ? (

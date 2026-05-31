@@ -8,3 +8,11 @@ server/dist/
 .env
 .DS_Store
 coverage/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+.build/
+*.xcscmblueprint
+.claude/
+.agents/
+.codegraph/
