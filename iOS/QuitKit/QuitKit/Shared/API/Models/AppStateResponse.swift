@@ -216,6 +216,15 @@ struct SmokeLog: Decodable {
 enum SmokeKind: String, Decodable {
     case transition
     case relapse
+
+    var title: String {
+        switch self {
+        case .transition:
+            return "Переход"
+        case .relapse:
+            return "Срыв"
+        }
+    }
 }
 
 extension SmokeLog {

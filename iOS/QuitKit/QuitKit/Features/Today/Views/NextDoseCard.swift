@@ -19,7 +19,7 @@ struct NextDoseCard: View {
     }
 
     private var actionHint: String {
-        state.nextDose == nil ? "Следующий слот появится позже" : "Удержи, чтобы отметить приём"
+        state.nextDose == nil ? "Следующий слот появится позже" : "Проведи вправо, чтобы отметить приём"
     }
 
     var body: some View {
@@ -28,7 +28,7 @@ struct NextDoseCard: View {
             CountdownPanel(nextDose: state.nextDose)
             DoseProgressStrip(total: state.todaySchedule.count, taken: takenToday)
 
-            PressAndHoldActionButton(
+            SlideToConfirmActionButton(
                 title: actionTitle,
                 subtitle: actionHint,
                 systemImage: "checkmark",

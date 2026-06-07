@@ -33,9 +33,9 @@ struct TodayContent: View {
                 DoseListCard(doses: state.todaySchedule, onEditDose: onEditDose)
             }
 
-            PressAndHoldActionButton(
+            SlideToConfirmActionButton(
                 title: "Покурил",
-                subtitle: "Удержи, чтобы записать без самобичевания",
+                subtitle: "Проведи, чтобы записать без самобичевания",
                 systemImage: "smoke",
                 tint: QuitKitTheme.amber,
                 disabled: isBusy,

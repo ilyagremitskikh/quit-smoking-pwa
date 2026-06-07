@@ -232,6 +232,30 @@ export class Repository {
     this.db.prepare("DELETE FROM smoke_log WHERE id = ?").run(smokeId);
   }
 
+  updateSmoke(
+    smokeId: number,
+    input: { loggedAt?: Date; note?: string | null },
+    timeZone = APP_TIME_ZONE
+  ): SmokeLogRow {
+    const current = this.db
+      .prepare("SELECT * FROM smoke_log WHERE id = ?")
+      .get(smokeId) as SmokeLogRow | undefined;
+    if (!current) {
+      throw new Error("Smoke log not found");
+    }
+
+    const loggedAt = input.loggedAt ?? new Date(current.logged_at);
+    const loggedAtIso = isoFromDate(loggedAt);
+    const note = input.note === undefined ? current.note : input.note?.trim() || null;
+    const kind = this.smokeKindForNow(loggedAt, timeZone);
+
+    this.db
+      .prepare("UPDATE smoke_log SET logged_at = ?, note = ?, kind = ? WHERE id = ?")
+      .run(loggedAtIso, note, kind, smokeId);
+
+    return this.db.prepare("SELECT * FROM smoke_log WHERE id = ?").get(smokeId) as SmokeLogRow;
+  }
+
   getProgress(now = new Date(), timeZone = APP_TIME_ZONE): {
     days: ProgressDay[];
     smokes: SmokeLogRow[];

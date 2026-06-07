@@ -310,6 +310,52 @@ describe("api routes", () => {
     expect(progress.json().benefits.smokeFreeHours).toBe(48);
   });
 
+  it("edits a smoke log and recalculates progress", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/api/course",
+      payload: {
+        startDate: "2026-05-01T05:00:00.000Z",
+        firstDoseTime: "08:00"
+      }
+    });
+    const smoke = await app.inject({
+      method: "POST",
+      url: "/api/smoke",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-05T19:00:00.000Z" },
+      payload: {}
+    });
+
+    const edited = await app.inject({
+      method: "PUT",
+      url: `/api/smoke/${smoke.json().smoke.id}`,
+      headers: { "X-QuitKit-Time-Zone": "Asia/Yekaterinburg" },
+      payload: {
+        loggedAt: "2026-05-03T12:00:00.000Z",
+        note: "ошибочная запись поправлена"
+      }
+    });
+    const progress = await app.inject({
+      method: "GET",
+      url: "/api/progress",
+      headers: { "X-QuitKit-Demo-Now": "2026-05-06T19:00:00.000Z" }
+    });
+
+    expect(edited.statusCode).toBe(200);
+    expect(edited.json()).toMatchObject({
+      id: smoke.json().smoke.id,
+      logged_at: "2026-05-03T12:00:00.000Z",
+      note: "ошибочная запись поправлена",
+      kind: "transition"
+    });
+    expect(progress.json().smokeEvents[0]).toMatchObject({
+      id: smoke.json().smoke.id,
+      logged_at: "2026-05-03T12:00:00.000Z",
+      kind: "transition"
+    });
+    expect(progress.json().benefits.smokeFreeHours).toBe(48);
+  });
+
   it("calculates adherence only from elapsed slots", async () => {
     await app.inject({
       method: "POST",

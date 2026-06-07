@@ -24,6 +24,11 @@ const takeDoseSchema = z.object({
   takenAt: z.string().datetime().optional()
 }).optional();
 
+const updateSmokeSchema = z.object({
+  loggedAt: z.string().datetime().optional(),
+  note: z.string().nullable().optional()
+});
+
 const closeDaySchema = z.object({
   mode: z.literal("skipped")
 });
@@ -80,6 +85,15 @@ export async function registerApiRoutes(app: FastifyInstance, repo: Repository) 
     const params = z.object({ smokeId: z.coerce.number().int().positive() }).parse(request.params);
     repo.deleteSmoke(params.smokeId);
     return { ok: true };
+  });
+
+  app.put("/api/smoke/:smokeId", async (request) => {
+    const params = z.object({ smokeId: z.coerce.number().int().positive() }).parse(request.params);
+    const body = updateSmokeSchema.parse(request.body);
+    return repo.updateSmoke(params.smokeId, {
+      loggedAt: body.loggedAt ? new Date(body.loggedAt) : undefined,
+      note: body.note
+    }, readTimeZone(request.headers));
   });
 
   app.get("/api/smoke", async () => repo.getSmokeLogs());

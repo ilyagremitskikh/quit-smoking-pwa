@@ -60,6 +60,14 @@ struct APIClient {
         try await request("/api/smoke/\(smokeId)", method: "DELETE")
     }
 
+    func updateSmoke(smokeId: Int, loggedAt: Date, note: String?) async throws -> SmokeLog {
+        let body = UpdateSmokeRequest(
+            loggedAt: QuitKitDateFormatter.isoString(from: loggedAt),
+            note: note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+        return try await request("/api/smoke/\(smokeId)", method: "PUT", body: body)
+    }
+
     private func request<Response: Decodable>(_ path: String, method: String = "GET") async throws -> Response {
         let emptyBody: EmptyRequestBody? = nil
         return try await request(path, method: method, body: emptyBody)
@@ -96,6 +104,11 @@ struct EmptyRequestBody: Encodable {}
 
 struct TakeDoseRequest: Encodable {
     let takenAt: String?
+}
+
+struct UpdateSmokeRequest: Encodable {
+    let loggedAt: String
+    let note: String?
 }
 
 struct EmptyResponse: Decodable {

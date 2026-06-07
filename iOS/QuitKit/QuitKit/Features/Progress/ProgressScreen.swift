@@ -22,7 +22,9 @@ struct ProgressScreen: View {
                         CourseTimelineCard(days: progress.days, milestones: progress.milestones)
 
                         if !progress.smokeEvents.isEmpty {
-                            SmokeHistoryCard(events: progress.smokeEvents)
+                            SmokeHistoryCard(events: progress.smokeEvents) { event in
+                                viewModel.openSmokeEditor(for: event)
+                            }
                         }
                     } else if viewModel.isLoading {
                         LoadingCard()
@@ -49,7 +51,28 @@ struct ProgressScreen: View {
             await viewModel.load()
         }
         .sensoryFeedback(trigger: viewModel.feedbackEvent) { _, event in
-            event?.kind == .warning ? .warning : nil
+            switch event?.kind {
+            case .selection:
+                return .selection
+            case .success:
+                return .success
+            case .warning:
+                return .warning
+            case .none:
+                return nil
+            }
+        }
+        .sheet(item: $viewModel.smokeEditor) { editor in
+            SmokeEditorSheet(
+                editor: editor,
+                isBusy: viewModel.isBusy,
+                onSave: { updatedEditor in
+                    await viewModel.saveEditedSmoke(updatedEditor)
+                },
+                onDelete: { updatedEditor in
+                    await viewModel.deleteEditedSmoke(updatedEditor)
+                }
+            )
         }
     }
 }
